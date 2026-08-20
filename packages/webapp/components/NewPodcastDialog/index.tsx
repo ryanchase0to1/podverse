@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Icons } from '@/components/icons';
-import { Episode, Podcast, PodcastWithEpisodes, PodcastWithEpisodesMetadata } from 'podverse-utils';
+import { Episode, PodcastWithEpisodes, PodcastWithEpisodesMetadata } from 'podverse-utils';
 import { EpisodeStrip } from '../PodcastEpisodeList';
 import { readPodcastFeed, importPodcast } from '@/lib/actions';
 import { usePodcastLimit } from '@/lib/limits';
@@ -20,9 +20,11 @@ enum importStage {
   ENTER_URL,
   LOADING,
   VALIDATING,
+  IMPORTING,
 }
 
 export function NewPodcastDialog() {
+  const [open, setOpen] = useState(false);
   const [rssUrl, setRssUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<importStage>(importStage.ENTER_URL);
@@ -31,6 +33,20 @@ export function NewPodcastDialog() {
   if (!planLimit) {
     return null;
   }
+
+  const resetDialogState = () => {
+    setStage(importStage.ENTER_URL);
+    setPodcast(null);
+    setError(null);
+    setRssUrl(null);
+  };
+
+  const onOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      resetDialogState();
+    }
+  };
 
   const onImportClicked = async () => {
     setError(null);
@@ -62,24 +78,26 @@ export function NewPodcastDialog() {
   };
 
   const onConfirmClicked = async () => {
-    if (!rssUrl || !podcast) {
+    if (!rssUrl || !podcast || stage === importStage.IMPORTING) {
       return;
     }
-    importPodcast(rssUrl)
-      .then((result) => {
-        setPodcast(null);
-        setStage(importStage.ENTER_URL);
-        toast.success(`Podcast imported successfully`);
-      })
-      .catch((e) => {
-        setStage(importStage.ENTER_URL);
-        setPodcast(null);
-        setError('Error reading podcast feed: ' + e.message);
-      });
+    setError(null);
+    setStage(importStage.IMPORTING);
+    try {
+      await importPodcast(rssUrl);
+      toast.success('Podcast imported successfully');
+      setOpen(false);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(`Error importing podcast: ${message}`);
+      toast.error(`Import failed: ${message}`);
+      setStage(importStage.VALIDATING);
+    }
   };
 
   const onCancelClicked = async () => {
     toast.info('Podcast import cancelled');
+    setOpen(false);
   };
 
   let upgradeMessage = (
@@ -96,9 +114,11 @@ export function NewPodcastDialog() {
   );
 
   return (
-    <Dialog>
-      <DialogTrigger>
-        <div className={cn(buttonVariants({ variant: 'secondary' }), 'font-mono text-sm')}>Import podcast</div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <button type="button" className={cn(buttonVariants({ variant: 'secondary' }), 'font-mono text-sm')}>
+          Import podcast
+        </button>
       </DialogTrigger>
       <DialogContent className="w-4/5 max-h-[800px] overflow-y-auto">
         <DialogHeader>
@@ -133,8 +153,13 @@ export function NewPodcastDialog() {
               <div>{error && <div className="text-primary">{error}</div>}</div>
               <div>{stage === importStage.LOADING && <Icons.spinner className="mx-auto h-6 w-6 animate-spin" />}</div>
               <div>
-                {stage === importStage.VALIDATING && podcast && (
-                  <PodcastPreview podcast={podcast} onConfirm={onConfirmClicked} onCancel={onCancelClicked} />
+                {(stage === importStage.VALIDATING || stage === importStage.IMPORTING) && podcast && (
+                  <PodcastPreview
+                    podcast={podcast}
+                    importing={stage === importStage.IMPORTING}
+                    onConfirm={onConfirmClicked}
+                    onCancel={onCancelClicked}
+                  />
                 )}
               </div>
             </>
@@ -163,32 +188,36 @@ function PodcastPreviewHeader({ podcast }: { podcast: PodcastWithEpisodesMetadat
 
 function PodcastPreview({
   podcast,
+  importing,
   onConfirm,
   onCancel,
 }: {
   podcast: PodcastWithEpisodesMetadata;
-  onConfirm: () => void;
-  onCancel: () => void;
+  importing: boolean;
+  onConfirm: () => void | Promise<void>;
+  onCancel: () => void | Promise<void>;
 }) {
   return (
-    <div className="w-full flex flex-col gap-2">
+    <div className="flex w-full flex-col gap-2">
       <div className="text-primary text-sm">Here&apos;s a preview of your podcast:</div>
       <PodcastPreviewHeader podcast={podcast} />
       <div className="text-primary text-sm">Newest episodes</div>
       {podcast.Episodes.slice(0, 3).map((episode) => (
         <EpisodeStrip key={episode.id} podcast={podcast as PodcastWithEpisodes} episode={episode as Episode} />
       ))}
-      <div className="flex flex-row gap-2 justify-end">
-        <DialogClose asChild>
-          <Button variant="default" onClick={onConfirm}>
-            Looks good
-          </Button>
-        </DialogClose>
-        <DialogClose asChild>
-          <Button variant="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-        </DialogClose>
+      {importing && (
+        <div className="text-primary flex items-center gap-2 text-sm">
+          <Icons.spinner className="h-4 w-4 animate-spin" />
+          Saving podcast to your account…
+        </div>
+      )}
+      <div className="flex flex-row justify-end gap-2">
+        <Button type="button" variant="default" disabled={importing} onClick={() => void onConfirm()}>
+          Looks good
+        </Button>
+        <Button type="button" variant="secondary" disabled={importing} onClick={() => void onCancel()}>
+          Cancel
+        </Button>
       </div>
     </div>
   );

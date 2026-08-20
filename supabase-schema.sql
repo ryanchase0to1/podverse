@@ -548,6 +548,7 @@ CREATE TABLE IF NOT EXISTS "public"."Podcasts" (
     "owner" "text" DEFAULT "public"."requesting_user_id"(),
     "copyright" "text",
     "author" "text",
+    "language" "text",
     "private" boolean DEFAULT true,
     "uuid" "uuid" DEFAULT "gen_random_uuid"(),
     "published" boolean DEFAULT false,
