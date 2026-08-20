@@ -11,7 +11,7 @@ interface AudioPlayerContextType {
   pause: () => void;
   seek: (time: number) => void;
   isPlaying: boolean;
-  audioRef: MutableRefObject<HTMLAudioElement>;
+  audioRef: MutableRefObject<HTMLAudioElement | null>;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
@@ -21,21 +21,23 @@ export function useAudioPlayer() {
 }
 
 export function AudioPlayerProvider({ children }: { children: React.ReactNode }) {
-  const audioRef = useRef(new Audio());
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const play = () => {
-    audioRef.current.play();
+    audioRef.current?.play();
     setIsPlaying(true);
   };
 
   const pause = () => {
-    audioRef.current.pause();
+    audioRef.current?.pause();
     setIsPlaying(false);
   };
 
   const seek = (time: number) => {
-    audioRef.current.currentTime = time;
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+    }
   };
 
   const value = {
@@ -69,7 +71,7 @@ export function AudioPlayer({ episode }: { episode: EpisodeWithPodcast }) {
   console.log('Loading audio from URL: ', audioUrl);
 
   const onLoadedMetadata = () => {
-    const seconds = audioRef.current.duration;
+    const seconds = audioRef.current?.duration ?? 0;
     setDuration(seconds);
   };
 
@@ -81,7 +83,13 @@ export function AudioPlayer({ episode }: { episode: EpisodeWithPodcast }) {
   );
 }
 
-function AudioControls({ audioRef, duration }: { audioRef: MutableRefObject<HTMLAudioElement>; duration: number }) {
+function AudioControls({
+  audioRef,
+  duration,
+}: {
+  audioRef: MutableRefObject<HTMLAudioElement | null>;
+  duration: number;
+}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [curTime, setCurTime] = useState(0);
   const playAnimationRef = useRef<number | undefined>(undefined);
@@ -155,7 +163,7 @@ function AudioSeeker({
   duration,
   onValueChange,
 }: {
-  audioRef: MutableRefObject<HTMLAudioElement>;
+  audioRef: MutableRefObject<HTMLAudioElement | null>;
   curTime: number;
   duration: number;
   onValueChange: (value: number) => void;
