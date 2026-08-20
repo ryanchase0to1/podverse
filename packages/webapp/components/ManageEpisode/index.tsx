@@ -120,21 +120,40 @@ function UploadImage({ episode }: { episode: EpisodeWithPodcast }) {
   );
 }
 
+const POLL_INTERVAL_MS = 5000;
+/** How long to keep polling after kicking off processing, waiting for the job to start. */
+const POLL_GRACE_MS = 2 * 60 * 1000;
+
 export function ManageEpisode({ podcastSlug, episodeSlug }: { podcastSlug: string; episodeSlug: string }) {
   const [episode, setEpisode] = useState<EpisodeWithPodcast | null>(null);
+  const [pollDeadline, setPollDeadline] = useState(0);
 
-  useEffect(() => {
-    if (episode) {
-      return;
-    }
-    getEpisodeWithPodcast(podcastSlug, episodeSlug)
+  const refresh = useCallback(() => {
+    return getEpisodeWithPodcast(podcastSlug, episodeSlug)
       .then((episode) => {
         setEpisode(episode);
       })
       .catch((e) => {
         toast.error('Failed to fetch episode: ' + e.message);
       });
-  }, [podcastSlug, episodeSlug, episode]);
+  }, [podcastSlug, episodeSlug]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  // Processing happens asynchronously in Inngest, so poll for status changes while the
+  // episode is processing. Also poll for a grace period after the user kicks off a run,
+  // since the episode stays in its previous state until the job picks up the event.
+  const polling = (episode !== null && isProcessing(episode)) || Date.now() < pollDeadline;
+
+  useEffect(() => {
+    if (!polling) {
+      return;
+    }
+    const interval = setInterval(refresh, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [polling, refresh]);
 
   if (!episode) {
     return (
@@ -169,7 +188,10 @@ export function ManageEpisode({ podcastSlug, episodeSlug }: { podcastSlug: strin
               </TabsTrigger>
             </TabsList>
             <TabsContent className="w-60% border-muted my-0 border p-4" value="general">
-              <ManageEpisodeGeneral episode={episode} />
+              <ManageEpisodeGeneral
+                episode={episode}
+                onProcessingStarted={() => setPollDeadline(Date.now() + POLL_GRACE_MS)}
+              />
             </TabsContent>
             <TabsContent className="w-60% border-muted my-0 border p-4" value="embed">
               <EmbedEpisode episode={episode} />
@@ -181,7 +203,13 @@ export function ManageEpisode({ podcastSlug, episodeSlug }: { podcastSlug: strin
   );
 }
 
-function ManageEpisodeGeneral({ episode }: { episode: EpisodeWithPodcast }) {
+function ManageEpisodeGeneral({
+  episode,
+  onProcessingStarted,
+}: {
+  episode: EpisodeWithPodcast;
+  onProcessingStarted: () => void;
+}) {
   const [force, setForce] = useState(false);
   const planLimit = useEpisodeLimit(episode.podcast.id);
   if (!planLimit) {
@@ -197,8 +225,9 @@ function ManageEpisodeGeneral({ episode }: { episode: EpisodeWithPodcast }) {
   const handleProcess = async () => {
     setForce(false);
     try {
-      toast.success(`Started processing episode ${episode.title}`);
       await processEpisode(episode.id.toString(), force);
+      toast.success(`Started processing episode ${episode.title}`);
+      onProcessingStarted();
     } catch (e) {
       toast.error(`Failed to start processing: ${(e as { message: string }).message}`);
     }
