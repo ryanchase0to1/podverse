@@ -1,7 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 import { getSupabaseClient } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
+import { AuthButtons } from './AuthButtons';
 
 /** Create a new Users table record, if needed, for the currently logged-in user. */
 export async function createUser() {
@@ -22,18 +21,5 @@ export async function createUser() {
 
 export async function SignupOrLogin({ text }: { text?: string }) {
   await createUser();
-  return (
-    <>
-      <SignedIn>
-        <UserButton />
-      </SignedIn>
-      <SignedOut>
-        <SignInButton>
-          <Button variant="default" className="font-mono">
-            {text || 'Sign in'}
-          </Button>
-        </SignInButton>
-      </SignedOut>
-    </>
-  );
+  return <AuthButtons text={text} />;
 }
