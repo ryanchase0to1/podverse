@@ -86,11 +86,11 @@ export default async function RootLayout({ children }: RootLayoutProps) {
               <TailwindIndicator />
             </ThemeProvider>
             <Analytics />
+            <SpeedInsights />
           </body>
           <GoogleAnalytics gaId="G-F7EJYK1JLV" />
         </html>
       </ClerkProvider>
-      <SpeedInsights />
     </>
   );
 }
