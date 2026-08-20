@@ -39,7 +39,9 @@ function DisabledTooltip({ children, disabled }: { children: React.ReactNode; di
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger>{children}</TooltipTrigger>
+          <TooltipTrigger asChild>
+            <div>{children}</div>
+          </TooltipTrigger>
           <TooltipContent className="text-muted-foreground w-[400px] font-sans text-sm">
             Sharing is disabled for private podcasts. Set this podcast to public to enable sharing.
           </TooltipContent>
