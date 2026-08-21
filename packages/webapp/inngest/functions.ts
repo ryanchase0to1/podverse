@@ -122,7 +122,10 @@ export const processEpisode = inngest.createFunction(
       //
       // Deepgram will call back to our /api/episode/:episodeId/transcript endpoint,
       // which fires this event to continue processing.ID
-      if (transcribeResult === 'Transcription started') {
+      // startsWith, not equality: TranscribeEpisode appends the episode id and language to
+      // this message, and an exact match silently skips the wait, which lets the remaining
+      // steps run against a transcript that does not exist yet and marks the episode done.
+      if (transcribeResult.startsWith('Transcription started')) {
         console.log(`process/episode [${episodeId}] - Waiting for transcript-received event`);
         await step.waitForEvent('transcript-received', {
           event: 'process/transcript',
