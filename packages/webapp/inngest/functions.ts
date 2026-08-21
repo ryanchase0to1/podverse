@@ -24,8 +24,11 @@ import { TranscribeEpisode, SummarizeEpisode, SpeakerIDEpisode, EmbedEpisode, Su
 import { sendEmail } from '@/lib/email';
 import { userPrimaryEmailAddress } from '@/lib/users';
 
-// Used when running locally - use `tailscale serve`.
-const DEVELOPMENT_SERVER_HOSTNAME = 'deepdocks.tailf7e81.ts.net';
+// Used when running locally. Deepgram posts the finished transcript back to this host, so it
+// must be publicly reachable and forward to your dev server - e.g. `tailscale serve`, ngrok,
+// or a Cloudflare tunnel. Set DEVELOPMENT_SERVER_HOSTNAME in .env.local to your own tunnel;
+// without it the callback goes nowhere and the run stalls until waitForEvent times out.
+const DEVELOPMENT_SERVER_HOSTNAME = process.env.DEVELOPMENT_SERVER_HOSTNAME ?? 'deepdocks.tailf7e81.ts.net';
 
 /** Return false if the user's plan does not permit processing of this Episode. */
 async function checkUserPlanLimit(supabase: SupabaseClient, episode: EpisodeWithPodcast): Promise<boolean> {
