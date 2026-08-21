@@ -116,7 +116,10 @@ export async function TranscribeEpisode({
   await UpdateEpisode(supabase, episode);
 
   console.log(`Transcribing episode ${episode.id} from podcast ${podcast.title} with language ${podcast.language}`);
-  const result = await TranscribeAsync(audioUrl, callbackUrl + `?supabaseAccessToken=${supabaseToken}`, podcast.language || undefined);
+  // No Supabase token on the callback URL: it would have expired by the time Deepgram calls
+  // back, and sending a user credential to a third party in a query string is worth avoiding.
+  // The callback authenticates via the dg-token header and uses the service role client.
+  const result = await TranscribeAsync(audioUrl, callbackUrl, podcast.language || undefined);
   console.log(`Starting transcription for episode ${episode.id}: ${JSON.stringify(result, null, 2)}`);
   return `Transcription started for episode ${episode.id} with language ${podcast.language}`;
 }

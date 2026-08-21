@@ -1,4 +1,4 @@
-import { getSupabaseClientWithToken } from '@/lib/supabase';
+import { getSupabaseServiceClient } from '@/lib/supabase';
 import { TranscribeEpisodeCallback } from '@/lib/process';
 import { inngest } from '@/inngest/client';
 
@@ -7,15 +7,9 @@ export async function POST(req: Request, { params }: { params: { episodeId: stri
   console.log(`Got transcript callback for episode: ${params.episodeId}`);
   const data = await req.json();
 
-  // @ts-expect-error
-  const supabaseAccessToken = req.nextUrl.searchParams.get('supabaseAccessToken');
-  if (!supabaseAccessToken) {
-    // @ts-expect-error
-    console.error('No access token provided', req.nextUrl);
-    return Response.json({ message: 'Thank you for uploading your transcript.' });
-  }
-
-  // Check dg-token header.
+  // The dg-token header is the only authentication on this route. A Supabase token used to
+  // be passed in the query string, but Deepgram calls back long after it expires, so this
+  // route uses the service role client instead.
   const DEEPGRAM_API_KEY_IDENTIFIER = process.env.DEEPGRAM_API_KEY_IDENTIFIER || '';
   if (!DEEPGRAM_API_KEY_IDENTIFIER) {
     console.error('Missing DEEPGRAM_API_KEY_IDENTIFIER environment variable.');
@@ -27,7 +21,7 @@ export async function POST(req: Request, { params }: { params: { episodeId: stri
     return Response.json({ message: 'Thank you for uploading your transcript.' });
   }
 
-  const supabase = await getSupabaseClientWithToken(supabaseAccessToken);
+  const supabase = getSupabaseServiceClient();
   const result = await TranscribeEpisodeCallback({ supabase, episodeId: parseInt(params.episodeId), result: data });
   console.log(`TranscribeEpisodeCallback result: ${result}`);
 
