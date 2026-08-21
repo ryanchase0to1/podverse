@@ -26,6 +26,13 @@ import { withFile } from 'tmp-promise';
 import { Writable } from 'stream';
 import { SyncPrerecordedResponse } from '@deepgram/sdk';
 
+/**
+ * Supabase rejects uploads larger than the project-wide limit with a 413, and that limit is
+ * 50 MB on the free plan. Episodes routinely exceed it, so check before spending the
+ * bandwidth. Override via SUPABASE_UPLOAD_LIMIT_BYTES if the project allows more.
+ */
+const UPLOAD_SIZE_LIMIT_BYTES = Number(process.env.SUPABASE_UPLOAD_LIMIT_BYTES ?? 50 * 1024 * 1024);
+
 async function updateStatus({
   supabase,
   episode,
@@ -66,15 +73,17 @@ export async function TranscribeEpisode({
   if (episode.transcriptUrl !== null && !force) {
     return `Episode ${episode.id} already transcribed.`;
   }
-  if (episode.originalAudioUrl === null) {
+  const originalAudioUrl = episode.originalAudioUrl;
+  if (originalAudioUrl === null) {
     return `Episode ${episode.id} has no audio.`;
   }
 
   // First, download the audio file and stash it in our own bucket.
-  const res = await fetch(episode.originalAudioUrl, {
+  const res = await fetch(originalAudioUrl, {
     redirect: 'follow',
     headers: { 'User-Agent': 'Podverse' },
   });
+  const contentLength = Number(res.headers.get('content-length') ?? 0);
   console.log(
     `Fetched audio for episode ${episode.id}: ${res.status} ${res.statusText} - size is ${res.headers.get(
       'content-length'
@@ -84,36 +93,47 @@ export async function TranscribeEpisode({
     throw new Error(`Error fetching audio: ${res.status} ${res.statusText}`);
   }
 
-  let audioUrl: string | null = null;
+  // Deepgram fetches the audio itself, so our own copy is not required to transcribe. Prefer
+  // it when we can make one, since podcast CDN URLs rotate and expire, but fall back to the
+  // original URL rather than failing the episode outright.
+  let audioUrl = originalAudioUrl;
 
-  await withFile(async ({ path }) => {
-    console.log(`Writing audio to ${path}`);
-    const stream = createWriteStream(path);
-    const body = res.body;
-    if (!body) {
-      throw new Error('No body in response');
-    }
-    await body.pipeTo(Writable.toWeb(stream));
-    console.log(`Finished writing audio to ${path}`);
-    const file = createReadStream(path);
-
-    audioUrl = await UploadLargeFile(
-      supabase,
-      supabaseToken,
-      file,
-      res.headers.get('content-type') || 'audio/mp3',
-      'audio',
-      `${episode.podcast}/${episode.id}/audio.mp3`
+  if (contentLength > UPLOAD_SIZE_LIMIT_BYTES) {
+    console.log(
+      `Audio for episode ${episode.id} is ${contentLength} bytes, over the ${UPLOAD_SIZE_LIMIT_BYTES} byte upload limit - transcribing from the original URL.`
     );
+    await res.body?.cancel();
+  } else {
+    try {
+      await withFile(async ({ path }) => {
+        console.log(`Writing audio to ${path}`);
+        const stream = createWriteStream(path);
+        const body = res.body;
+        if (!body) {
+          throw new Error('No body in response');
+        }
+        await body.pipeTo(Writable.toWeb(stream));
+        console.log(`Finished writing audio to ${path}`);
+        const file = createReadStream(path);
 
-    console.log(`Saved audio for ${episode.id} to: ${audioUrl}`);
-  });
+        audioUrl = await UploadLargeFile(
+          supabase,
+          supabaseToken,
+          file,
+          res.headers.get('content-type') || 'audio/mp3',
+          'audio',
+          `${episode.podcast}/${episode.id}/audio.mp3`
+        );
 
-  if (!audioUrl) {
-    throw new Error('Failed to upload audio');
+        console.log(`Saved audio for ${episode.id} to: ${audioUrl}`);
+      });
+      episode.audioUrl = audioUrl;
+      await UpdateEpisode(supabase, episode);
+    } catch (e) {
+      console.error(`Could not stash audio for episode ${episode.id}, using the original URL:`, e);
+      audioUrl = originalAudioUrl;
+    }
   }
-  episode.audioUrl = audioUrl;
-  await UpdateEpisode(supabase, episode);
 
   console.log(`Transcribing episode ${episode.id} from podcast ${podcast.title} with language ${podcast.language}`);
   // No Supabase token on the callback URL: it would have expired by the time Deepgram calls

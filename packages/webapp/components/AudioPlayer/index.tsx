@@ -67,7 +67,8 @@ export function AudioPlayer({ episode }: { episode: EpisodeWithPodcast }) {
   const { audioRef } = player;
 
   //const audioUrl = '/audio/7a623d27-1461-4144-a653-850b04b788df.mp3';
-  const audioUrl = `/api/proxy?url=${episode.audioUrl}`;
+  // audioUrl is only set when we were able to stash our own copy; otherwise play the source.
+  const audioUrl = `/api/proxy?url=${episode.audioUrl ?? episode.originalAudioUrl}`;
   console.log('Loading audio from URL: ', audioUrl);
 
   const onLoadedMetadata = () => {
