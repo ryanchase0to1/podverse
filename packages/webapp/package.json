@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "inngest-dev": "npx inngest-cli@latest dev",
+    "create-buckets": "node scripts/create-storage-buckets.mjs",
     "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe-webhooks",
     "build": "next build",
     "start": "next start",
