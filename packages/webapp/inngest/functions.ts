@@ -1,6 +1,6 @@
 /** This module contains Inngest Functions that are invoked in response to Inngest events. */
 
-import { getSupabaseClientWithToken } from '../lib/supabase';
+import { getSupabaseServiceClient } from '../lib/supabase';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { inngest } from './client';
 import {
@@ -58,12 +58,15 @@ export const processEpisode = inngest.createFunction(
   },
   { event: 'process/episode' },
   async ({ event, step }) => {
-    const { episodeId, force, supabaseAccessToken } = event.data;
+    const { episodeId, force } = event.data;
     if (!episodeId) {
       throw new Error('process/episode - Missing episodeId in event data');
     }
     console.log(`process/episode event received for episodeId ${episodeId}`, event);
-    const supabase = await getSupabaseClientWithToken(supabaseAccessToken);
+    // Service role rather than a caller JWT. These functions can park at waitForEvent
+    // for up to an hour waiting on Deepgram, and Clerk JWTs expire in ~60 seconds.
+    // Ownership is already checked in the processEpisode server action before the event is sent.
+    const supabase = getSupabaseServiceClient();
     let episodeWithPodcast = await GetEpisodeWithPodcast(supabase, episodeId);
     let podcast = episodeWithPodcast.podcast;
     let episode = EpisodeWithPodcastToEpisode(episodeWithPodcast);
@@ -111,7 +114,7 @@ export const processEpisode = inngest.createFunction(
         console.log(`process/episode [${episodeId}] - Callback URL: ${callbackUrl}`);
         const result = await TranscribeEpisode({
           supabase,
-          supabaseToken: supabaseAccessToken,
+          supabaseToken: process.env.SUPABASE_SERVICE_ROLE_KEY ?? null,
           episode,
           podcast,
           callbackUrl,
@@ -124,7 +127,7 @@ export const processEpisode = inngest.createFunction(
       // Wait for transcript.
       //
       // Deepgram will call back to our /api/episode/:episodeId/transcript endpoint,
-      // which fires this event to continue processing.ID
+      // which fires process/transcript so we can continue processing.
       // startsWith, not equality: TranscribeEpisode appends the episode id and language to
       // this message, and an exact match silently skips the wait, which lets the remaining
       // steps run against a transcript that does not exist yet and marks the episode done.
@@ -232,11 +235,11 @@ export const processPodcast = inngest.createFunction(
   },
   { event: 'process/podcast' },
   async ({ event, step, runId }) => {
-    const { podcastId, force, supabaseAccessToken, episodes, episodeLimit, maxEpisodes } = event.data;
+    const { podcastId, force, episodes, episodeLimit, maxEpisodes } = event.data;
     console.log(
       `process/podcast - event ${runId} received for ${podcastId}, force ${force}, episodeLimit ${episodeLimit}`,
     );
-    const supabase = await getSupabaseClientWithToken(supabaseAccessToken);
+    const supabase = getSupabaseServiceClient();
     const podcast = await GetPodcastWithEpisodesByID(supabase, podcastId);
     let cap = episodeLimit;
     if (maxEpisodes && !force) {
@@ -263,7 +266,6 @@ export const processPodcast = inngest.createFunction(
           data: {
             episodeId: episode.id,
             force,
-            supabaseAccessToken,
           },
         });
         return result;
@@ -284,9 +286,9 @@ export const ingestPodcast = inngest.createFunction(
   },
   { event: 'ingest/podcast' },
   async ({ event, step, runId }) => {
-    const { podcastId, rssUrl, supabaseAccessToken } = event.data;
+    const { podcastId, rssUrl } = event.data;
     console.log(`ingest/podcast - event ${runId}, podcastId ${podcastId}, rssUrl ${rssUrl}`);
-    const supabase = await getSupabaseClientWithToken(supabaseAccessToken);
+    const supabase = getSupabaseServiceClient();
     let rssFeed = rssUrl;
     let originalEpisodes: Episode[] = [];
     if (podcastId) {
@@ -307,7 +309,6 @@ export const ingestPodcast = inngest.createFunction(
         name: 'process/podcast',
         data: {
           podcastId: newPodcast.id,
-          supabaseAccessToken,
           episodes: newEpisodes.map((episode) => episode.id),
         },
       });
@@ -329,9 +330,9 @@ export const clearErrors = inngest.createFunction(
   },
   { event: 'clear/errors' },
   async ({ event, step, runId }) => {
-    const { podcastId, supabaseAccessToken } = event.data;
+    const { podcastId } = event.data;
     console.log(`clear/errors - event ${runId}, podcastId ${podcastId}`);
-    const supabase = await getSupabaseClientWithToken(supabaseAccessToken);
+    const supabase = getSupabaseServiceClient();
     await ClearPodcastErrors({ supabase, podcastId });
     return { message: `Cleared errors for podcast ${podcastId}` };
   },
@@ -346,7 +347,7 @@ export const refreshPodcasts = inngest.createFunction(
   { cron: '0 1 * * *' }, // Run daily at 1am UTC
   async ({ step }) => {
     console.log(`refreshPodcasts - Starting`);
-    const supabase = await getSupabaseClientWithToken(process.env.SUPABASE_SERVICE_ROLE_KEY as string);
+    const supabase = getSupabaseServiceClient();
     const stats = await GetPodcastStats(supabase);
 
     console.log(`refreshPodcasts - Clearing errors for ${stats.length} podcasts`);
@@ -357,7 +358,6 @@ export const refreshPodcasts = inngest.createFunction(
           name: 'clear/errors',
           data: {
             podcastId: stat.id,
-            supabaseAccessToken: process.env.SUPABASE_SERVICE_ROLE_KEY,
           },
         });
         return result;
@@ -373,29 +373,12 @@ export const refreshPodcasts = inngest.createFunction(
           name: 'ingest/podcast',
           data: {
             podcastId: stat.id,
-            supabaseAccessToken: process.env.SUPABASE_SERVICE_ROLE_KEY,
           },
         });
         return result;
       }),
     );
     console.log(`refreshPodcasts - Done ingesting.`);
-
-    // console.log(`refreshPodcasts - Processing ${stats.length} podcasts`);
-    // await Promise.all(
-    //   stats.map(async (stat) => {
-    //     console.log(`refreshPodcasts - Processing podcast ${stat.id}`);
-    //     const result = step.sendEvent('process-podcast', {
-    //       name: 'process/podcast',
-    //       data: {
-    //         podcastId: stat.id,
-    //         supabaseAccessToken: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    //       },
-    //     });
-    //     return result;
-    //   }),
-    // );
-    // console.log(`refreshPodcasts - Done processing.`);
 
     await sendEmail({
       subject: 'Daily podcast refresh job completed',

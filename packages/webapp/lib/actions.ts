@@ -88,13 +88,13 @@ export async function processEpisode(episodeId: string, force: boolean): Promise
   console.log(`Kicking off processing for episode: ${episodeId}`);
   const { userId, getToken } = auth();
 
-  // We need to get the token here since we're going to pass it to Inngest.
+  // Auth for the ownership check only. The Inngest worker uses the service role client
+  // because this job can wait up to an hour for Deepgram and Clerk JWTs expire in ~60s.
   const supabaseAccessToken = await getToken({ template: 'podverse-supabase' });
   if (!supabaseAccessToken) {
     throw new Error('Unauthorized');
   }
 
-  // Check ownership of episode.
   const supabase = await getSupabaseClientWithToken(supabaseAccessToken);
   const episode = await GetEpisodeWithPodcast(supabase, parseInt(episodeId));
   if (episode.podcast.owner !== userId) {
@@ -105,7 +105,6 @@ export async function processEpisode(episodeId: string, force: boolean): Promise
     data: {
       episodeId,
       force,
-      supabaseAccessToken,
     },
   });
 
@@ -120,12 +119,11 @@ export async function processPodcast(podcastId: string, force: boolean, episodeL
   console.log(`Kicking off processing for podcast: ${podcastId}`);
   const { userId, getToken } = auth();
 
-  // We need to get the token here since we're going to pass it to Inngest.
+  // Auth for the ownership check only; the Inngest worker uses the service role client.
   const supabaseAccessToken = await getToken({ template: 'podverse-supabase' });
   if (!supabaseAccessToken) {
     throw new Error('Unauthorized');
   }
-  // Check ownership of podcast.
   const supabase = await getSupabaseClientWithToken(supabaseAccessToken);
   const podcast = await GetPodcastByID(supabase, podcastId);
   if (podcast.owner !== userId) {
@@ -136,7 +134,6 @@ export async function processPodcast(podcastId: string, force: boolean, episodeL
     data: {
       podcastId: podcast.id.toString(),
       force,
-      supabaseAccessToken,
       episodeLimit,
     },
   });
@@ -150,12 +147,11 @@ export async function refreshPodcast(podcastId: string): Promise<string> {
   console.log(`Kicking off refresh for podcast: ${podcastId}`);
   const { userId, getToken } = auth();
 
-  // We need to get the token here since we're going to pass it to Inngest.
+  // Auth for the ownership check only; the Inngest worker uses the service role client.
   const supabaseAccessToken = await getToken({ template: 'podverse-supabase' });
   if (!supabaseAccessToken) {
     throw new Error('Unauthorized');
   }
-  // Check ownership of podcast.
   const supabase = await getSupabaseClientWithToken(supabaseAccessToken);
   const podcast = await GetPodcastByID(supabase, podcastId);
   if (podcast.owner !== userId) {
@@ -165,7 +161,6 @@ export async function refreshPodcast(podcastId: string): Promise<string> {
     name: 'ingest/podcast',
     data: {
       podcastId: podcast.id.toString(),
-      supabaseAccessToken,
     },
   });
   revalidatePath('/podcast/[podcastSlug]', 'layout');
