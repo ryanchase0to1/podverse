@@ -2,6 +2,7 @@ import { Podcast, PodcastWithEpisodes, isReady } from 'podverse-utils';
 import Link from 'next/link';
 import { AcceptPodcastDialog } from '../AcceptPodcastDialog';
 import { auth } from '@clerk/nextjs/server';
+import { siteConfig } from '@/config/site';
 
 // This user is allowed to see invite links.
 const ADMIN_USER_ID = 'user_2eEqltdMFHh6eKqOqnWQS8mQqDJ';
@@ -22,15 +23,15 @@ export function PodcastLinkHeader({
         <div className="flex flex-row bg-sky-900 p-4 text-center text-white">
           <div className="mx-auto w-3/5">
             <div className="flex flex-col gap-3">
-              <div className="font-mono underline underline-offset-8">Thanks for checking out Podverse!</div>
+              <div className="font-mono underline underline-offset-8">Thanks for checking out Podchat Studio!</div>
               <div className="text-pretty text-base">
-                This page is a <b>private</b> demo of Podverse for <b className="text-primary">{podcast.title}</b>.{' '}
+                This page is a <b>private</b> demo of Podchat Studio for <b className="text-primary">{podcast.title}</b>.{' '}
                 {numEpisodes ? `We've imported ${numEpisodes} recent episodes to get started. ` : ' '}
                 Feel free to click around and try out all the features.
               </div>
               <div className="text-pretty text-base">
                 As part of our initial launch, you&apos;re invited to claim a <b>one-year free subscription</b> to
-                Podverse &mdash; no strings attached. Just click below and we&apos;ll set up your free account, after
+                Podchat Studio &mdash; no strings attached. Just click below and we&apos;ll set up your free account, after
                 which you can manage your podcast, import more episodes, and share links with your listeners.
               </div>
               <AcceptPodcastDialog podcast={podcast} />
@@ -75,7 +76,7 @@ export function PodcastLinkHeader({
       <div className="mx-auto w-full">
         <div className="flex flex-col gap-3">
           <div className="font-mono text-sm">This podcast is public at the link:</div>
-          <div className="text-primary font-mono">https://podverse.ai/podcast/{podcast.slug}</div>
+          <div className="text-primary font-mono">{siteConfig.url}/podcast/{podcast.slug}</div>
         </div>
       </div>
     </div>

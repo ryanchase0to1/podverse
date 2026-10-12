@@ -1,5 +1,5 @@
 /**
- * This is a command-line utility to manage the set of Podcasts in the Podverse app.
+ * This is a command-line utility to manage the set of Podcasts in the Podchat Studio app.
  */
 
 import { config } from 'dotenv';
@@ -46,11 +46,11 @@ interface ConfigFile {
   podcasts: PodcastConfig[];
 }
 
-program.name('podverse-cli').version('0.0.1').description('CLI for managing Podverse state.');
+program.name('podverse-cli').version('0.0.1').description('CLI for managing Podchat Studio state.');
 
 function inviteLink(podcast: Podcast | PodcastMetadata | PodcastWithEpisodes) {
   const activationCode = podcast.uuid?.replace(/-/g, '');
-  return `https://podverse.ai/podcast/${podcast.slug}?activationCode=${activationCode}`;
+  return `https://podchatstudio.com/podcast/${podcast.slug}?activationCode=${activationCode}`;
 }
 
 // This is the mdw@mdw.la user in prod.
@@ -58,7 +58,7 @@ const DEFAULT_OWNER = 'user_2eEqltdMFHh6eKqOqnWQS8mQqDJ';
 
 program
   .command('list')
-  .description('List all podcasts in the Podverse app.')
+  .description('List all podcasts in the Podchat Studio app.')
   .option('--owner <owner>', 'Filter by owner ID.')
   .action(async (opts) => {
     const { data, error } = await supabase.from('Podcasts').select('*');
@@ -80,7 +80,7 @@ program
 
 program
   .command('get')
-  .description('Get a podcast from the Podverse app.')
+  .description('Get a podcast from the Podchat Studio app.')
   .argument('<slug>', 'Slug of the podcast to get.')
   .option('--episodes', 'Return episodes as well.')
   .action(async (slug: string, opts) => {
@@ -95,7 +95,7 @@ program
 
 program
   .command('ingest')
-  .description('Ingest a podcast into the Podverse app.')
+  .description('Ingest a podcast into the Podchat Studio app.')
   .argument('<podcastUrl>', 'URL of the podcast RSS feed.')
   .option('--owner <owner>', 'Owner ID of the podcast.', DEFAULT_OWNER)
   .action(async (podcastUrl: string, opts) => {
@@ -109,7 +109,7 @@ program
 
 program
   .command('delete')
-  .description('Delete a podcast from the Podverse app.')
+  .description('Delete a podcast from the Podchat Studio app.')
   .argument('<slug>', 'Slug of the podcast to delete.')
   .action(async (slug: string) => {
     await DeletePodcast(supabase, slug);
@@ -325,7 +325,7 @@ program
       for (const invite of invites) {
         const podcastId = invite.podcast.toString();
         const podcast = await GetPodcastByID(supabase, podcastId);
-        invite.link = `https://podverse.ai/podcast/${podcast.slug}?activationCode=${podcast.uuid?.replace(/-/g, '')}`;
+        invite.link = `https://podchatstudio.com/podcast/${podcast.slug}?activationCode=${podcast.uuid?.replace(/-/g, '')}`;
         console.log(invite);
       }
     } catch (err) {
@@ -358,7 +358,7 @@ program
   .description('Send email message via Mailgun.')
   .argument('<to>', 'Email address to send to.')
   .argument('<body>', 'Message body.')
-  .option('--subject <subject>', 'Message subject.', 'Message from Podverse.ai')
+  .option('--subject <subject>', 'Message subject.', 'Message from Podchat Studio')
   .action(async (to, body, opts) => {
     try {
       sendEmail({ to, subject: opts.subject, text: body });

@@ -19,21 +19,21 @@ function FeatureCard({ heading, image, children }: { heading: string; image: str
 
 const features = [
   <FeatureCard heading="ChatGPT for your podcast" image="/images/screenshot-episode.png">
-    Bring your podcast into the AI area with Podverse.
+    Bring your podcast into the AI area with Podchat Studio.
   </FeatureCard>,
   <FeatureCard heading="Podcast details page" image="/images/screenshot-podcast.png">
-    Bring your podcast into the AI area with Podverse.
+    Bring your podcast into the AI area with Podchat Studio.
   </FeatureCard>,
   <FeatureCard heading="Automatic episode transcripts" image="/images/screenshot-transcript.png">
-    Podverse generates text transcripts of each episode, and automatically identify the names of each speaker in the
+    Podchat Studio generates text transcripts of each episode, and automatically identify the names of each speaker in the
     audio. Transcripts are synchronized with audio playback.
   </FeatureCard>,
   <FeatureCard heading="AI-generated episode summaries" image="/images/screenshot-summary.png">
-    Podverse uses the latest AI models to read the transcript and come up with a short, pithy summary to make it easier
+    Podchat Studio uses the latest AI models to read the transcript and come up with a short, pithy summary to make it easier
     for listeners to learn more about your podcast.
   </FeatureCard>,
   <FeatureCard heading="AI-powered chat and Q&A" image="/images/screenshot-chat.png">
-    Podverse builds an AI chatbot that knows everything about your podcast and the content of every episode, helping
+    Podchat Studio builds an AI chatbot that knows everything about your podcast and the content of every episode, helping
     listeners dig deeper by asking questions and getting more information about your content. It&apos;s just like
     ChatGPT, but for your podcast.
   </FeatureCard>,

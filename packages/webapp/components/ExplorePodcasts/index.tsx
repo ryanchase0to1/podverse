@@ -6,7 +6,7 @@ export async function ExplorePodcasts() {
       <div className="flex w-full flex-row justify-between">
         <div className="text-primary font-mono text-lg">Explore podcasts</div>
       </div>
-      <div className="font-mono text-base">Check out the following podcasts on Podverse.</div>
+      <div className="font-mono text-base">Check out the following podcasts on Podchat Studio.</div>
       <PodcastList />
     </div>
   );

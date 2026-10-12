@@ -26,6 +26,7 @@ import { useChatContext, ChatContextProvider } from '@/components/ChatContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
+import { siteConfig } from '@/config/site';
 
 export const MemoizedReactMarkdown: FC<Options> = memo(
   ReactMarkdown,
@@ -152,8 +153,8 @@ function ChatPanel({
   );
 }
 
-function PodverseIcon() {
-  return <Image src="/images/podverse-logo.svg" alt="Podverse" width={32} height={32} />;
+function PodchatStudioIcon() {
+  return <Image src="/images/podchat-studio-logo.svg" alt="Podchat Studio" width={32} height={32} />;
 }
 
 function ChatSuggestion({ text, onClick }: { text: string; onClick: () => void }) {
@@ -189,7 +190,7 @@ function BusyMessage() {
   return (
     <div className={cn('group relative mb-4 flex items-start font-sans text-base')}>
       <div className="bg-background flex size-8 shrink-0 select-none items-center justify-center rounded-full">
-        <PodverseIcon />
+        <PodchatStudioIcon />
       </div>
       <div className="ml-4 flex-1 space-y-2 overflow-hidden px-1">
         <Skeleton className="h-4 w-[250px]" />
@@ -313,7 +314,7 @@ function cleanUpLink(href?: string): string | undefined {
   } catch (e) {
     // Try tacking on our hostname and parsing again.
     try {
-      url = new URL('https://podverse.ai' + href);
+      url = new URL(siteConfig.url + href);
     } catch (e) {
       // Nope, that didn't work.
       console.error('cleanUpLink: Failed to parse URL:', href);
@@ -372,7 +373,7 @@ function ChatMessage({
         {message.role === 'user' ? (
           <UserIcon className="text-primary bg-secondary rounded-full p-1" />
         ) : (
-          <PodverseIcon />
+          <PodchatStudioIcon />
         )}
       </div>
       <div className="ml-4 flex-1 space-y-2 overflow-hidden px-1">
@@ -454,7 +455,7 @@ function EmptyChat() {
   return (
     <div className="mx-auto max-w-2xl px-4">
       <div className="bg-background p-8">
-        <h1 className="mb-2 text-lg font-semibold">Podverse chat</h1>
+        <h1 className="mb-2 text-lg font-semibold">Podchat Studio chat</h1>
       </div>
     </div>
   );
@@ -481,7 +482,7 @@ export function Chat({
     retval.push({
       content:
         greeting ||
-        "Hi there! I'm the Podverse AI Bot. You can ask me questions about any of the podcasts on this site.",
+        "Hi there! I'm the Podchat Studio AI Bot. You can ask me questions about any of the podcasts on this site.",
       role: 'assistant',
     });
     const randomSuggestions = suggestions ? suggestions.sort(() => 0.5 - Math.random()).slice(0, 3) : [];
@@ -567,7 +568,7 @@ export function ContextAwareChat({ embed }: { embed?: boolean }) {
     return null;
   }
   const greeting =
-    "Hi there! I'm the Podverse AI Bot. You can ask me questions about any of the podcasts on this site.";
+    "Hi there! I'm the Podchat Studio AI Bot. You can ask me questions about any of the podcasts on this site.";
   const suggestions = ['What are some good science podcasts?', 'Are there any episodes about music?', 'Report a bug'];
 
   if (episode) {
@@ -583,7 +584,7 @@ export function PodcastContextChat({ podcast, embed }: { podcast: PodcastWithEpi
   // Ensure the chat widget can add UUIDs to outgoing links if we are the owner.
   const { userId } = useAuth();
   const uuid = userId && podcast.owner === userId && podcast.uuid ? podcast.uuid.replace(/-/g, '') : undefined;
-  const greeting = `Hi there! I\'m the Podverse AI Bot. You can ask me questions about the **${podcast.title}** podcast.`;
+  const greeting = `Hi there! I\'m the Podchat Studio AI Bot. You can ask me questions about the **${podcast.title}** podcast.`;
   return (
     <Chat podcastId={podcast.id} greeting={greeting} suggestions={podcast.suggestions} uuid={uuid} embed={embed} />
   );
@@ -596,7 +597,7 @@ export function EpisodeContextChat({ episode, embed }: { episode: EpisodeWithPod
     userId && episode.podcast.owner === userId && episode.podcast.uuid
       ? episode.podcast.uuid.replace(/-/g, '')
       : undefined;
-  const greeting = `Hi there! I\'m the Podverse AI Bot. You can ask me questions about **${episode.title}** or the **${episode.podcast.title}** podcast.`;
+  const greeting = `Hi there! I\'m the Podchat Studio AI Bot. You can ask me questions about **${episode.title}** or the **${episode.podcast.title}** podcast.`;
   return (
     <Chat episodeId={episode.id} greeting={greeting} suggestions={episode.suggestions} uuid={uuid} embed={embed} />
   );

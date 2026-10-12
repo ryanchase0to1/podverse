@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Create the Supabase Storage buckets that Podverse needs.
+ * Create the Supabase Storage buckets that Podchat Studio needs.
  *
  * `supabase db dump` only covers the `public` schema, so these buckets are absent from
  * supabase-schema.sql and have to be created separately. Without them, episode processing

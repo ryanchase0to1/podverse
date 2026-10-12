@@ -3,8 +3,8 @@ export async function GET(req: Request) {
   const response = {
     type: 'rich',
     version: '1.0',
-    //    html: '<iframe src="https://www.podverse.ai/embed/chat/omnibus" width="100%" height="600" frameborder="0" scrolling="no"></iframe>',
-    html: '<div>This is a test from Podverse.</div>',
+    //    html: '<iframe src="https://podchatstudio.com/embed/chat/omnibus" width="100%" height="600" frameborder="0" scrolling="no"></iframe>',
+    html: '<div>This is a test from Podchat Studio.</div>',
     width: 600,
     height: 400,
   };

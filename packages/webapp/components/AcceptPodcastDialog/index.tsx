@@ -1,6 +1,7 @@
 'use client';
 
 import { Podcast, PodcastWithEpisodes } from 'podverse-utils';
+import { siteConfig } from '@/config/site';
 import {
   Dialog,
   DialogClose,
@@ -23,7 +24,7 @@ export function ActivateButton({ text }: { text?: string }) {
 }
 
 export function SignUpOrActivateButton({ text, uuid }: { text?: string; uuid: string }) {
-  const redirectUrl = 'https://podverse.ai/activate/' + uuid.replace(/-/g, '');
+  const redirectUrl = siteConfig.url + '/activate/' + uuid.replace(/-/g, '');
   return (
     <>
       <SignedIn>
@@ -51,11 +52,11 @@ export function AcceptPodcastDialog({ podcast }: { podcast: Podcast | PodcastWit
       </DialogTrigger>
       <DialogContent className="max-w-md md:max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="font-mono">Activate your Podverse account</DialogTitle>
+          <DialogTitle className="font-mono">Activate your Podchat Studio account</DialogTitle>
         </DialogHeader>
         <div>
           <div className="text-muted-foreground flex flex-col gap-4 font-mono text-sm">
-            <div>You are about to activate your Podverse account and claim your one-year free subscription.</div>
+            <div>You are about to activate your Podchat Studio account and claim your one-year free subscription.</div>
             <div>
               Click the <b className="text-primary">Activate account</b> button below to sign in.
             </div>

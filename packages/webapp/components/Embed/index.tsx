@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 import { toast } from 'sonner';
+import { siteConfig } from '@/config/site';
 
 type PodcastEmbedType = 'episodeList' | 'podcastChat' | 'episodeSearch';
 type EpisodeEmbedType = 'episodeSummary' | 'episodeTranscript' | 'episodeChat';
@@ -205,7 +206,7 @@ function EmbedPreview({
 }
 
 function EmbedCode({ url, width, height }: { url: string; width: number; height: number }) {
-  const embedCode = `<iframe src="https://www.podverse.ai${url}" width="${width}" height="${height}"></iframe>`;
+  const embedCode = `<iframe src="${siteConfig.url}${url}" width="${width}" height="${height}"></iframe>`;
 
   return (
     <>

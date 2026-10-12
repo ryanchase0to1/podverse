@@ -1,7 +1,8 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: 'Podverse',
+  name: 'Podchat Studio',
+  url: 'https://podchatstudio.com',
   description: 'Take your podcast to the next level with AI superpowers.',
   mainNav: [
     {

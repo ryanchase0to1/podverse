@@ -1,9 +1,9 @@
-/* This code is used to embed the Podverse chat widget onto your page. */
+/* This code is used to embed the Podchat Studio chat widget onto your page. */
 
 (function () {
-  function embedPodverseChat(containerId, options) {
+  function embedPodchatStudioChat(containerId, options) {
     var iframe = document.createElement('iframe');
-    var host = options.host || 'https://www.podverse.ai';
+    var host = options.host || 'https://podchatstudio.com';
     var baseUrl = `${host}/embed/chat/${options.podcast}`;
     iframe.src = options.episode ? baseUrl + `/episode/${options.episode}` : baseUrl;
     iframe.width = options.width || '600px';
@@ -11,5 +11,5 @@
     iframe.style.border = 'none';
     document.getElementById(containerId).appendChild(iframe);
   }
-  window.embedPodverseChat = embedPodverseChat;
+  window.embedPodchatStudioChat = embedPodchatStudioChat;
 })();

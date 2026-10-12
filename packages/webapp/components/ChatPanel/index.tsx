@@ -29,7 +29,7 @@ export function ChatPanel({ children, suggestedQueries }: { children: React.Reac
       <DrawerTrigger>{children}</DrawerTrigger>
       <DrawerContent className="mx-auto size-full md:w-4/5">
         <DrawerHeader>
-          <DrawerTitle className="text-primary mx-auto font-mono">Podverse AI Chat</DrawerTitle>
+          <DrawerTitle className="text-primary mx-auto font-mono">Podchat Studio AI Chat</DrawerTitle>
         </DrawerHeader>
         <div className="mx-auto w-full overflow-scroll md:w-3/5">
           <ChatContextProvider>
@@ -63,7 +63,7 @@ export function FloatingChatPanel() {
             role="button"
             className="bg-muted border-primary h-18 z-10 flex flex-row items-center gap-2 rounded-full border p-4 font-mono"
           >
-            <Image src="/images/podverse-logo.svg" alt="Podverse" width={40} height={40} />
+            <Image src="/images/podchat-studio-logo.svg" alt="Podchat Studio" width={40} height={40} />
             AI Chat
           </div>
         </div>

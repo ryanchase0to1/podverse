@@ -12,11 +12,11 @@ export default function PrivacyPage() {
       <div className="font-mono text-primary text-xl">Privacy Policy</div>
       <div>Last updated February 15, 2024</div>
       <div>
-        Pod Chat Studio (“Pod Chat Studio,” “we,” “our,” and/or “us”) values the privacy of individuals who use our website and
+        Podchat Studio (“Podchat Studio,” “we,” “our,” and/or “us”) values the privacy of individuals who use our website and
         related services (collectively, our “Services”). This privacy policy (the “Privacy Policy”) explains how we
         collect, use, and disclose information from users of our Services (“Users”). By using our Services, you agree to
         the collection, use, disclosure, and procedures this Privacy Policy describes. Beyond the Privacy Policy, your
-        use of our Services is also subject to our Terms of Service (https://podverse.ai/tos).
+        use of our Services is also subject to our Terms of Service (https://podchatstudio.com/tos).
       </div>
       <div className="font-mono text-primary text-base">Information We Collect</div>
       <div>
@@ -138,7 +138,7 @@ export default function PrivacyPage() {
       <div>
         <span className="font-bold">Vendors and Service Providers.</span> We may disclose any information we receive to
         vendors and service providers in connection with the provision of our Services, including the AI provider that
-        powers Podverse.ai.
+        powers Podchat Studio.
       </div>
 
       <div>
@@ -209,7 +209,7 @@ export default function PrivacyPage() {
       <div>
         - To change whether certain information is publicly viewable, you can adjust the settings in your account.
       </div>
-      <div>- Additional information regarding privacy settings can be found at https://podverse.ai.</div>
+      <div>- Additional information regarding privacy settings can be found at https://podchatstudio.com.</div>
       <div>
         <span className="font-bold">Location Information.</span> You can prevent your device from sharing precise
         location information at any time through your device’s operating system settings.

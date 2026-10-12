@@ -81,7 +81,7 @@ export async function TranscribeEpisode({
   // First, download the audio file and stash it in our own bucket.
   const res = await fetch(originalAudioUrl, {
     redirect: 'follow',
-    headers: { 'User-Agent': 'Podverse' },
+    headers: { 'User-Agent': 'Podchat Studio' },
   });
   const contentLength = Number(res.headers.get('content-length') ?? 0);
   console.log(

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Podcast, PodcastWithEpisodes } from 'podverse-utils';
+import { siteConfig } from '@/config/site';
 import {
   Dialog,
   DialogClose,
@@ -218,7 +219,7 @@ export function PublicPodcastSwitch({
             </TooltipTrigger>
             <TooltipContent className="text-muted-foreground w-[400px] font-sans text-sm">
               When this option is enabled, your podcast link will be public at{' '}
-              <span className="text-primary font-mono">https://podverse.ai/podcast/{podcast.slug}</span>. Keep this
+              <span className="text-primary font-mono">{siteConfig.url}/podcast/{podcast.slug}</span>. Keep this
               option disabled if you wish to keep your podcast link private.
             </TooltipContent>
           </Tooltip>

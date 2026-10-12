@@ -14,6 +14,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
+import { siteConfig } from '@/config/site';
 
 function CopyLinkToClipboard({ url, disabled }: { url: string; disabled?: boolean }) {
   const copyToClipboard = () => {
@@ -55,13 +56,13 @@ function DisabledTooltip({ children, disabled }: { children: React.ReactNode; di
 
 export function ShareButtons({ disabled }: { disabled?: boolean }) {
   const pathname = usePathname();
-  const url = `https://podverse.ai${pathname}`;
+  const url = `${siteConfig.url}${pathname}`;
   return (
     <DisabledTooltip disabled={disabled}>
       <div className="flex flex-row items-center gap-1">
         <span className="text-muted-foreground mr-1 text-xs">Share:</span>
         <CopyLinkToClipboard url={url} disabled={disabled} />
-        <EmailShareButton url={url} subject="Podverse AI" disabled={disabled}>
+        <EmailShareButton url={url} subject="Podchat Studio AI" disabled={disabled}>
           <EmailIcon size={32} round={true} />
         </EmailShareButton>
         <TwitterShareButton url={url} disabled={disabled}>

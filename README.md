@@ -1,8 +1,8 @@
-# Podverse - AI Superpowers for Podcasts
+# Podchat Studio - AI Superpowers for Podcasts
 
-<img src="./packages/webapp/public/images/podverse-episode-screenshot.png" alt="drawing" width="400"/>
+<img src="./packages/webapp/public/images/podchat-studio-episode-screenshot.png" alt="drawing" width="400"/>
 
-Podverse is a web app that brings AI superpowers to podcasts.
+Podchat Studio is a web app that brings AI superpowers to podcasts.
 
 This project is meant as a demonstration of a full-stack webapp that leverages AI capabilities.
 
@@ -17,7 +17,7 @@ This project is meant as a demonstration of a full-stack webapp that leverages A
 
 ## Architecture
 
-Podverse is an entirely serverless architecture. It is built using Next.js and can be deployed
+Podchat Studio is an entirely serverless architecture. It is built using Next.js and can be deployed
 using [Vercel](https://vercel.com). It uses [TailwindCSS](https://tailwindcss.com/) for styling
 and [ShadCN](https://ui.shadcn.com/) for UI components.
 
@@ -60,7 +60,7 @@ account, and set the environment variables `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`,
 
 ## Supabase setup
 
-The file `supabase-schema.sql` contains a dump of the Supabase schema for Podverse,
+The file `supabase-schema.sql` contains a dump of the Supabase schema for Podchat Studio,
 generated using `supabase db dump`. Once you have initialized your Supabase project,
 you can restore it using:
 
@@ -71,7 +71,7 @@ $ psql -h YOUR_SUPABASE_DB_HOST -U YOUR_DB_USER -d YOUR_DB_NAME -f supabase-sche
 ### Storage buckets
 
 `supabase db dump` only covers the `public` schema, so Storage buckets are **not** included
-in `supabase-schema.sql` and have to be created separately. Podverse uses four: `audio`,
+in `supabase-schema.sql` and have to be created separately. Podchat Studio uses four: `audio`,
 `transcripts`, `summaries`, and `covers`. Without them, episode processing fails at the
 transcription step with a `Bucket not found` error.
 

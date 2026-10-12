@@ -3,8 +3,8 @@ import { FormData } from 'formdata-node';
 import { getUser, userPrimaryEmailAddress } from '@/lib/users';
 
 const DEFAULT_TO_ADDRESS = 'hello@podchatstudio.com';
-const DEFAULT_FROM_ADDRESS = 'Podverse <noreply@podverse.ai>';
-const DEFAULT_EMAIL_DOMAIN = 'mail1.podverse.ai';
+const DEFAULT_FROM_ADDRESS = 'Podchat Studio <noreply@podchatstudio.com>';
+const DEFAULT_EMAIL_DOMAIN = 'podchatstudio.com';
 const DEFAULT_BCC_ADDRESS = 'hello@podchatstudio.com';
 
 /** Send an email via Mailgun. */

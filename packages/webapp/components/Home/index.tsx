@@ -16,7 +16,7 @@ function CallToActionButtons() {
       {/* <ChatPanel>
         <div className={cn(buttonVariants({ variant: 'outline' }), 'hidden md:block border-primary w-full font-mono rounded-lg')}>
           <div className="flex flex-row items-center gap-2">
-            <Image src="/images/podverse-logo.svg" alt="Podverse" width={30} height={30} />
+            <Image src="/images/podchat-studio-logo.svg" alt="Podchat Studio" width={30} height={30} />
             AI Chat
           </div>
         </div>
@@ -45,13 +45,13 @@ function CallToActionButtons() {
 function DesktopHeroImage({ width, height }: { width?: number; height?: number }) {
   return (
     <ZoomableImage
-      src="/images/podverse-episode-screenshot.png"
-      alt="Podverse Episode Screenshot"
+      src="/images/podchat-studio-episode-screenshot.png"
+      alt="Podchat Studio Episode Screenshot"
       width={width || 700}
       height={height || 700}
     >
       <div className="mx-auto flex w-3/5 flex-col gap-2">
-        <div className="font-mono text-base">Podverse supercharges your podcast with AI.</div>
+        <div className="font-mono text-base">Podchat Studio supercharges your podcast with AI.</div>
         <div className="mx-auto flex flex-col items-center gap-2 md:flex-row">
           <CallToActionButtons />
         </div>

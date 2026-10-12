@@ -26,7 +26,7 @@ const FOLLOW_UP_DELAY = 1000 * 60 * 60 * 24 * 7;
 const DEFAULT_OWNER = 'user_2eEqltdMFHh6eKqOqnWQS8mQqDJ';
 
 // This is the Mailgun domain to use.
-const DEFAULT_DOMAIN = 'mail1.podverse.ai';
+const DEFAULT_DOMAIN = 'podchatstudio.com';
 
 // Address to BCC all emails to.
 const DEFAULT_BCC_ADDRESS = 'hello@podchatstudio.com';
@@ -255,7 +255,7 @@ export async function sendEmail({
   console.log(`Sending email to ${to} using mailgun domain ${domain}`);
   // @ts-ignore
   const response = await mg.messages.create(domain, {
-    from: 'Pod Chat Studio <hello@podchatstudio.com>',
+    from: 'Podchat Studio <hello@podchatstudio.com>',
     to,
     subject,
     bcc: bcc || DEFAULT_BCC_ADDRESS,
@@ -274,7 +274,7 @@ async function sendFirstEmail(invite: Invitation, podcast: PodcastWithEpisodes):
     templateVars: {
       recipient_name: invite.name || '',
       podcast_title: podcast.title,
-      podcast_link: `https://podverse.ai/podcast/${podcast.slug}?activationCode=${podcast.uuid?.replace(/-/g, '')}`,
+      podcast_link: `https://podchatstudio.com/podcast/${podcast.slug}?activationCode=${podcast.uuid?.replace(/-/g, '')}`,
     },
   });
 }
@@ -287,7 +287,7 @@ async function sendSecondEmail(invite: Invitation, podcast: PodcastWithEpisodes)
     templateVars: {
       recipient_name: invite.name || '',
       podcast_title: podcast.title,
-      podcast_link: `https://podverse.ai/podcast/${podcast.slug}?activationCode=${podcast.uuid?.replace(/-/g, '')}`,
+      podcast_link: `https://podchatstudio.com/podcast/${podcast.slug}?activationCode=${podcast.uuid?.replace(/-/g, '')}`,
     },
   });
 }
@@ -300,7 +300,7 @@ async function sendThirdEmail(invite: Invitation, podcast: PodcastWithEpisodes):
     templateVars: {
       recipient_name: invite.name || '',
       podcast_title: podcast.title,
-      podcast_link: `https://podverse.ai/podcast/${podcast.slug}?activationCode=${podcast.uuid?.replace(/-/g, '')}`,
+      podcast_link: `https://podchatstudio.com/podcast/${podcast.slug}?activationCode=${podcast.uuid?.replace(/-/g, '')}`,
     },
   });
 }
