@@ -15,6 +15,11 @@ CREATE SCHEMA IF NOT EXISTS "public";
 
 ALTER SCHEMA "public" OWNER TO "pg_database_owner";
 
+-- pgvector is not included in a public-schema dump. Without it, every object that
+-- uses public.vector (the Chunks table and the chunk_vector_search* functions) fails
+-- to create, and episode chat returns PGRST202.
+CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;
+
 CREATE OR REPLACE FUNCTION "public"."all_podcasts"("limit" integer, "isPrivate" boolean, "isPublished" boolean) RETURNS TABLE("id" bigint, "title" "text", "description" "text", "slug" "text", "private" boolean, "published" boolean, "imageUrl" "text", "newestEpisode" timestamp with time zone)
     LANGUAGE "plpgsql"
     AS $$#variable_conflict use_variable

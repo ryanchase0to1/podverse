@@ -307,22 +307,33 @@ export async function EmbedEpisode({
   if (episode.rawTranscriptUrl === null) {
     return `Episode ${episode.id} has no JSON transcript.`;
   }
-  // Check for existing embeddings.
+  // Check for existing embeddings. A Document row with no Chunks is not searchable,
+  // which happens when chunk storage failed after the document was created.
   const { data: existing, error } = await supabase.from('Documents').select('*').eq('episode', episode.id);
   if (error) {
     console.error('error', error);
     throw error;
   }
   if (existing && existing.length > 0) {
-    if (!force) {
+    const { count: chunkCount, error: chunkError } = await supabase
+      .from('Chunks')
+      .select('id', { count: 'exact', head: true })
+      .in(
+        'document',
+        existing.map((doc) => doc.id),
+      );
+    if (chunkError) {
+      console.error('error', chunkError);
+      throw chunkError;
+    }
+    if ((chunkCount ?? 0) > 0 && !force) {
       return `Episode ${episode.id} already embedded.`;
-    } else {
-      console.log(`Deleting existing embeddings for episode ${episode.id}`);
-      const { error } = await supabase.from('Documents').delete().eq('episode', episode.id);
-      if (error) {
-        console.error('error', error);
-        throw error;
-      }
+    }
+    console.log(`Deleting existing embeddings for episode ${episode.id}`);
+    const { error: deleteError } = await supabase.from('Documents').delete().eq('episode', episode.id);
+    if (deleteError) {
+      console.error('error', deleteError);
+      throw deleteError;
     }
   }
   const docId = await EmbedTranscript(supabase, episode.rawTranscriptUrl, episode.id);
