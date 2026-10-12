@@ -37,7 +37,8 @@ export async function searchPodcastIndex(query: string): Promise<PodcastSearchRe
     cache: 'no-store',
   });
   if (!response.ok) {
-    throw new Error(`Podcast search failed (${response.status})`);
+    const detail = (await response.text()).replace(/\s+/g, ' ').trim();
+    throw new Error(detail || `Podcast search failed (${response.status})`);
   }
 
   const data = (await response.json()) as {
