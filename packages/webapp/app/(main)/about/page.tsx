@@ -100,15 +100,7 @@ export default async function Page() {
 
         <div className="mt-4 font-mono text-3xl">Who made this thing?</div>
         <div className="text-muted-foreground">
-          Podverse is created by{' '}
-          <a href="https://ziggylabs.ai" className="text-primary underline">
-            Ziggylabs
-          </a>
-          , a new company building AI-powered tools that help people learn and grow. Ziggylabs is founded by{' '}
-          <a href="https://www.mdw.la" className="text-primary underline">
-            Matt Welsh
-          </a>
-          , an AI hacker, former CS prof, and entrepreneur from Seattle.
+          Podverse is created by Pod Chat Studio.
         </div>
         <div className="text-muted-foreground">
           We built Podverse because we love learning from podcasts, but found that podcast content can be hard to
@@ -118,8 +110,8 @@ export default async function Page() {
         <div className="text-muted-foreground">
           We&apos;d love to hear from you! If you have feedback, questions, or suggestions on how to make Podverse
           better, drop us a line at{' '}
-          <a href="mailto:hello@ziggylabs.ai" className="text-primary underline">
-            hello@ziggylabs.ai
+          <a href="mailto:hello@podchatstudio.com" className="text-primary underline">
+            hello@podchatstudio.com
           </a>
           .
         </div>

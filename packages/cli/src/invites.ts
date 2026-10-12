@@ -26,10 +26,10 @@ const FOLLOW_UP_DELAY = 1000 * 60 * 60 * 24 * 7;
 const DEFAULT_OWNER = 'user_2eEqltdMFHh6eKqOqnWQS8mQqDJ';
 
 // This is the Mailgun domain to use.
-const DEFAULT_DOMAIN = 'mail1.ziggylabs.ai';
+const DEFAULT_DOMAIN = 'mail1.podverse.ai';
 
 // Address to BCC all emails to.
-const DEFAULT_BCC_ADDRESS = 'matt@ziggylabs.ai';
+const DEFAULT_BCC_ADDRESS = 'hello@podchatstudio.com';
 
 // The invitation state machine looks like this:
 // (no invitation) -> podcast imported -> podcast processed -> initial email sent -> follow up emails sent
@@ -255,7 +255,7 @@ export async function sendEmail({
   console.log(`Sending email to ${to} using mailgun domain ${domain}`);
   // @ts-ignore
   const response = await mg.messages.create(domain, {
-    from: 'Matt Welsh <matt@ziggylabs.ai>',
+    from: 'Pod Chat Studio <hello@podchatstudio.com>',
     to,
     subject,
     bcc: bcc || DEFAULT_BCC_ADDRESS,

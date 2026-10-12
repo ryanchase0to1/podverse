@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       <div className="font-mono text-primary text-xl">Privacy Policy</div>
       <div>Last updated February 15, 2024</div>
       <div>
-        Ziggylabs (“Ziggylabs,” “we,” “our,” and/or “us”) values the privacy of individuals who use our website and
+        Pod Chat Studio (“Pod Chat Studio,” “we,” “our,” and/or “us”) values the privacy of individuals who use our website and
         related services (collectively, our “Services”). This privacy policy (the “Privacy Policy”) explains how we
         collect, use, and disclose information from users of our Services (“Users”). By using our Services, you agree to
         the collection, use, disclosure, and procedures this Privacy Policy describes. Beyond the Privacy Policy, your
@@ -261,7 +261,7 @@ export default function PrivacyPage() {
       <div>
         We do not knowingly collect, maintain, or use personal information from children under 13 years of age, and no
         part of our Services is directed to children. If you learn that a child has provided us with personal
-        information in violation of this Privacy Policy, then you may alert us at support@podverse.ai.
+        information in violation of this Privacy Policy, then you may alert us at hello@podchatstudio.com.
       </div>
 
       <div className="font-mono text-primary text-base">International Visitors</div>
@@ -295,7 +295,7 @@ export default function PrivacyPage() {
 
       <div>
         If you have any questions, comments, or concerns about our processing activities, please email us at
-        support@podverse.ai.
+        hello@podchatstudio.com.
       </div>
 
       <div>

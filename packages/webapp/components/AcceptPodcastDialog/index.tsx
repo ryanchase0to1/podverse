@@ -65,8 +65,8 @@ export function AcceptPodcastDialog({ podcast }: { podcast: Podcast | PodcastWit
             </div>
             <div>
               Any questions? Just email us at{' '}
-              <a className="text-primary font-mono underline" href="mailto:matt@ziggylabs.ai">
-                matt@ziggylabs.ai
+              <a className="text-primary font-mono underline" href="mailto:hello@podchatstudio.com">
+                hello@podchatstudio.com
               </a>
               . Thanks!
             </div>

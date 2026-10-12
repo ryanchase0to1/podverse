@@ -1,17 +1,12 @@
 import Link from 'next/link';
-import Image from 'next/image';
 
 export function Footer() {
   return (
     <footer>
-      <div className="w-full border-t mt-16 font-mono sm:mb-20">
-        <div className="mx-auto mt-4 mb-8 w-3/5 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-2 justify-between px-4 py-2 text-center text-sm">
-          <Link className="grid grid-cols-1" href="https://ziggylabs.ai/">
-            <div className="text-muted-foreground">Made with 🦴 by</div>
-            <div className="text-primary">Ziggylabs.ai</div>
-          </Link>
+      <div className="mt-16 w-full border-t font-mono sm:mb-20">
+        <div className="mx-auto mb-8 mt-4 flex w-3/5 flex-wrap items-center justify-center gap-8 px-4 py-2 text-center text-sm">
           <div className="text-primary">
-            <Link href="mailto:hello@ziggylabs.ai">Contact us</Link>
+            <Link href="mailto:hello@podchatstudio.com">Contact us</Link>
           </div>
           <div className="text-primary">
             <Link href="/privacy">Privacy policy</Link>

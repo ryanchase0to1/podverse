@@ -277,8 +277,8 @@ export async function search(query: string, podcastSlug?: string): Promise<Searc
 export async function reportIssue(email: string, issue: string): Promise<string> {
   const resend = new Resend(process.env.RESEND_API_KEY);
   const { data, error } = await resend.emails.send({
-    from: 'Ziggy Labs Help <help@ziggylabs.ai>',
-    to: ['matt@ziggylabs.ai'],
+    from: 'Pod Chat Studio <hello@podchatstudio.com>',
+    to: ['hello@podchatstudio.com'],
     subject: 'Issue reported by Podverse user',
     react: ReportIssueTemplate({ email, issue }),
   });
