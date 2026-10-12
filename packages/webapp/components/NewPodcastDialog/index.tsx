@@ -11,7 +11,8 @@ import { Icons } from '@/components/icons';
 import { Episode, PodcastWithEpisodes, PodcastWithEpisodesMetadata } from 'podverse-utils';
 import { EpisodeStrip } from '../PodcastEpisodeList';
 import { readPodcastFeed, importPodcast } from '@/lib/actions';
-import { usePodcastLimit } from '@/lib/limits';
+import { usePodcastLimit } from '@/lib/use-limits';
+import { PodcastLimit } from '@/lib/limits';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -23,13 +24,14 @@ enum importStage {
   IMPORTING,
 }
 
-export function NewPodcastDialog() {
+export function NewPodcastDialog({ planLimit: planLimitProp }: { planLimit?: PodcastLimit }) {
   const [open, setOpen] = useState(false);
   const [rssUrl, setRssUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<importStage>(importStage.ENTER_URL);
   const [podcast, setPodcast] = useState<PodcastWithEpisodesMetadata | null>(null);
-  const planLimit = usePodcastLimit();
+  const planLimitFromHook = usePodcastLimit(planLimitProp === undefined);
+  const planLimit = planLimitProp ?? planLimitFromHook;
   if (!planLimit) {
     return null;
   }

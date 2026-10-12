@@ -295,13 +295,30 @@ export async function getPodcastStats(): Promise<PodcastStat[]> {
   return await GetPodcastStats(supabase);
 }
 
+/** Light list of podcasts owned by the current user (avoids podcast_stats). */
+export async function getOwnedPodcasts(): Promise<{ id: number; title: string }[]> {
+  const { userId } = auth();
+  if (!userId) {
+    return [];
+  }
+  const supabase = await getSupabaseClient();
+  const { data, error } = await supabase
+    .from('Podcasts')
+    .select('id, title')
+    .eq('owner', userId)
+    .order('title', { ascending: true });
+  if (error) {
+    throw error;
+  }
+  return data ?? [];
+}
+
 export async function getEpisodeLimit(podcastId: number): Promise<EpisodeLimit | null> {
   const { userId } = auth();
   if (!userId) {
     return null;
   }
-  const stats = await getPodcastStats();
-  const sub = await getCurrentSubscription();
+  const [stats, sub] = await Promise.all([getPodcastStats(), getCurrentSubscription()]);
   let plan = PLANS.free;
   if (sub) {
     plan = PLANS[sub.plan];
@@ -313,8 +330,8 @@ export async function getEpisodeLimit(podcastId: number): Promise<EpisodeLimit |
   if (stat.owner !== userId) {
     return null;
   }
-  const total = stat?.allepisodes || 0;
-  const processed = stat?.processed || 0;
+  const total = Number(stat.allepisodes) || 0;
+  const processed = Number(stat.processed) || 0;
   const unprocessed = total - processed;
   const leftOnPlan = plan.maxEpisodesPerPodcast ? Math.max(0, plan.maxEpisodesPerPodcast - processed) : Infinity;
   const numToProcess = Math.min(unprocessed, leftOnPlan);
@@ -399,12 +416,11 @@ export async function getEpisodes({
   if (limit !== undefined && offset !== undefined) {
     dataQuery = dataQuery.range(offset, offset + limit - 1);
   }
-  const { count, error: e2 } = await countQuery;
+  const [{ count, error: e2 }, { data, error: e3 }] = await Promise.all([countQuery, dataQuery]);
   if (e2) {
     console.error('Error getting episode count:', e2);
     throw e2;
   }
-  const { data, error: e3 } = await dataQuery;
   console.log(`Got ${data?.length} episodes, total count is ${count}`);
   if (e3) {
     console.error('Error fetching episode data:', e3);

@@ -1,12 +1,14 @@
 import { getSupabaseClient } from '@/lib/supabase';
-import { PodcastWithEpisodes, GetPodcastWithEpisodes, isReady } from 'podverse-utils';
+import { PodcastWithEpisodes, GetPodcastWithEpisodes, isReady, PLANS } from 'podverse-utils';
 import { PodcastEpisodeList } from '@/components/PodcastEpisodeList';
 import Link from 'next/link';
 import { PodcastLinkHeader } from '@/components/PodcastLinkHeader';
 import { ContextAwareChat } from '@/components/Chat';
-import { getEpisodeLimit } from '@/lib/actions';
+import { getCurrentSubscription } from '@/lib/actions';
+import { computeEpisodeLimit } from '@/lib/limits';
 import { ChatContextProvider } from '../ChatContext';
 import { PodcastHeader } from '@/components/PodcastHeader';
+import { auth } from '@clerk/nextjs/server';
 
 
 export function PodcastChat({ podcast }: { podcast: PodcastWithEpisodes }) {
@@ -68,7 +70,14 @@ export async function PodcastDetail({
         throw new Error('Podcast is private and no UUID or activation code provided');
       }
     }
-    const planLimit = await getEpisodeLimit(podcast.id);
+    // Only compute plan limits for the owner; visitors don't need the subscription lookup.
+    const { userId } = auth();
+    let planLimit = null;
+    if (userId && podcast.owner === userId) {
+      const subscription = await getCurrentSubscription();
+      const plan = subscription ? (PLANS[subscription.plan] ?? PLANS.free) : PLANS.free;
+      planLimit = computeEpisodeLimit(podcast, plan);
+    }
 
     return (
       <>

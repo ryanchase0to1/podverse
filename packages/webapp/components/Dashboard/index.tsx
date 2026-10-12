@@ -3,6 +3,7 @@ import { NewPodcastDialog } from '@/components/NewPodcastDialog';
 import { PodcastStrip } from '@/components/PodcastStrip';
 import { getCurrentSubscription, getPodcastStats } from '@/lib/actions';
 import { Plan, PLANS, PodcastStat } from 'podverse-utils';
+import { PodcastLimit } from '@/lib/limits';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -24,26 +25,10 @@ function NewPodcastHeader({ podcast }: { podcast: PodcastStat }) {
   );
 }
 
-async function CurrentPlanHeader() {
-  const { userId } = auth();
-  if (!userId) {
-    return null;
-  }
-  let existingSubscription = null;
-  try {
-    existingSubscription = await getCurrentSubscription();
-  } catch (e) {
-    console.error('Error getting current subscription:', e);
-  }
-  let existingPlan: Plan | undefined = undefined;
-  if (existingSubscription) {
-    existingPlan = Object.values(PLANS).find((p) => p.id === existingSubscription?.plan) ?? PLANS.free;
-  } else if (userId && existingSubscription === null) {
-    existingPlan = PLANS.free;
-  }
+function CurrentPlanHeader({ plan }: { plan: Plan }) {
   return (
     <div className="bg-secondary border-primary mb-12 rounded-xl border p-4 text-white">
-      You are on the <span className="font-bold">{existingPlan!.displayName}</span> plan. Visit the{' '}
+      You are on the <span className="font-bold">{plan.displayName}</span> plan. Visit the{' '}
       <Link href="/pricing" className="text-primary underline">
         pricing page
       </Link>{' '}
@@ -58,7 +43,15 @@ export async function Dashboard({ assignedPodcast }: { assignedPodcast?: string 
   if (!userId) {
     return null;
   }
-  const podcasts: PodcastStat[] = await (await getPodcastStats()).filter((podcast) => podcast.owner === userId);
+
+  // Fetch stats + subscription once; PodcastStrip used to re-fetch limits per row.
+  const [allStats, subscription] = await Promise.all([getPodcastStats(), getCurrentSubscription()]);
+  const podcasts = allStats.filter((podcast) => podcast.owner === userId);
+  const plan = subscription ? (PLANS[subscription.plan] ?? PLANS.free) : PLANS.free;
+  const podcastLimit: PodcastLimit = {
+    totalPodcasts: podcasts.length,
+    leftOnPlan: plan.maxPodcasts !== undefined ? Math.max(0, plan.maxPodcasts - podcasts.length) : Infinity,
+  };
 
   let newPodcast = null;
   if (assignedPodcast) {
@@ -69,7 +62,7 @@ export async function Dashboard({ assignedPodcast }: { assignedPodcast?: string 
     <>
       {newPodcast && <NewPodcastHeader podcast={newPodcast} />}
       <div className="mx-auto mt-8 flex w-full flex-col gap-4 px-2 md:w-3/5">
-        <CurrentPlanHeader />
+        <CurrentPlanHeader plan={plan} />
         <div className="flex w-full flex-row justify-between">
           <div className="flex flex-col items-center gap-2 sm:flex-row">
             <div className="font-mono text-lg">Your podcasts</div>
@@ -79,11 +72,11 @@ export async function Dashboard({ assignedPodcast }: { assignedPodcast?: string 
               </Button>
             </Link>
           </div>
-          <NewPodcastDialog />
+          <NewPodcastDialog planLimit={podcastLimit} />
         </div>
         <div className="flex size-full flex-col gap-2 overflow-y-auto p-2 text-xs">
           {podcasts.length > 0 ? (
-            podcasts.map((podcast, index) => <PodcastStrip key={index} podcast={podcast} />)
+            podcasts.map((podcast) => <PodcastStrip key={podcast.id} podcast={podcast} />)
           ) : (
             <div className="text-muted-foreground mt-6 font-mono text-base">
               You have not imported any podcasts yet. Click the <span className="text-primary">New podcast</span> button

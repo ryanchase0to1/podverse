@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { getSupabaseClient } from '@/lib/supabase';
-import { GetPodcastWithEpisodes } from 'podverse-utils';
+import { GetPodcastWithEpisodes, PLANS } from 'podverse-utils';
 import { auth } from '@clerk/nextjs/server';
 import { EmbedPodcast } from '@/components/Embed';
 import { buttonVariants } from '../ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { getEpisodeLimit } from '@/lib/actions';
+import { getCurrentSubscription } from '@/lib/actions';
+import { computeEpisodeLimit } from '@/lib/limits';
 import { DeletePodcastDialog, ManagePodcastGeneral } from '../ManagePodcastGeneral';
 import { PodcastHeader } from '@/components/PodcastHeader';
 import { SuggestionsEditor } from '@/components/SuggestionsEditor';
@@ -13,13 +14,21 @@ import { SuggestionsEditor } from '@/components/SuggestionsEditor';
 export async function ManagePodcast({ podcastSlug }: { podcastSlug: string }) {
   try {
     const { userId } = auth();
+    if (!userId) {
+      throw new Error('Unauthorized');
+    }
     const supabase = await getSupabaseClient();
-    let podcast = null;
-    podcast = await GetPodcastWithEpisodes(supabase, podcastSlug);
+    // Load podcast + subscription in parallel; derive limits from episodes already fetched
+    // instead of re-running the global podcast_stats RPC.
+    const [podcast, subscription] = await Promise.all([
+      GetPodcastWithEpisodes(supabase, podcastSlug),
+      getCurrentSubscription(),
+    ]);
     if (podcast.owner !== userId) {
       throw new Error('Unauthorized');
     }
-    const planLimit = await getEpisodeLimit(podcast.id);
+    const plan = subscription ? (PLANS[subscription.plan] ?? PLANS.free) : PLANS.free;
+    const planLimit = computeEpisodeLimit(podcast, plan);
 
     return (
       <>
@@ -52,7 +61,7 @@ export async function ManagePodcast({ podcastSlug }: { podcastSlug: string }) {
                 </TabsTrigger>
               </TabsList>
               <TabsContent className="w-60% border-muted my-0 border p-4" value="general">
-                <ManagePodcastGeneral podcastSlug={podcast.slug} planLimit={planLimit} />
+                <ManagePodcastGeneral podcast={podcast} planLimit={planLimit} />
               </TabsContent>
               <TabsContent className="w-60% border-muted my-0 border p-4" value="suggestions">
                 <SuggestionsEditor podcastId={podcast.id} />

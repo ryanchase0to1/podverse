@@ -1,18 +1,13 @@
 import Link from 'next/link';
 import { buttonVariants } from '@/components/ui/button';
-import { PodcastStat, isError, isProcessing, isReady } from 'podverse-utils';
+import { PodcastStat } from 'podverse-utils';
 import { Icons } from '@/components/icons';
 import { ExclamationTriangleIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import { getEpisodeLimit } from '@/lib/actions';
 import Image from 'next/image';
 
-export async function PodcastStrip({ podcast }: { podcast: PodcastStat }) {
+export function PodcastStrip({ podcast }: { podcast: PodcastStat }) {
   const podcastUuid = podcast.uuid?.replace(/-/g, '');
   const podcastLink = `${podcast.slug}?uuid=${podcastUuid}`;
-  const planLimit = await getEpisodeLimit(podcast.id);
-  if (!planLimit) {
-    throw new Error('Plan limit not found');
-  }
   const numEpisodes = podcast.allepisodes;
   const numReadyEpisodes = podcast.processed;
   const numProcessing = podcast.inprogress;
@@ -26,7 +21,6 @@ export async function PodcastStrip({ podcast }: { podcast: PodcastStat }) {
         </div>
         <div className="line-clamp-3 flex w-4/5 flex-col gap-4 truncate text-wrap">
           <div className="text-primary line-clamp-2 text-lg">{podcast.title}</div>
-          {/* {podcast.copyright && <div className="text-muted-foreground text-xs">{podcast.copyright}</div>} */}
           {numReadyEpisodes > 0 ? (
             <div className="text-sm">
               <span className="text-primary">{numReadyEpisodes}</span> processed /{' '}

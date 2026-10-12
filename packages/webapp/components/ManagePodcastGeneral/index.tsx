@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Podcast, PodcastWithEpisodes } from 'podverse-utils';
 import {
   Dialog,
@@ -28,7 +28,6 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { getPodcastWithEpisodes } from '@/lib/actions';
 
 export function DeletePodcastDialog({ podcast }: { podcast: PodcastWithEpisodes }) {
   const router = useRouter();
@@ -44,7 +43,7 @@ export function DeletePodcastDialog({ podcast }: { podcast: PodcastWithEpisodes 
 
   return (
     <Dialog>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button className="font-mono" variant="destructive">
           <TrashIcon className="mr-2 inline size-5" />
           Delete podcast
@@ -135,7 +134,7 @@ function ProcessPodcastDialog({ podcast, planLimit }: { podcast: PodcastWithEpis
 
   return (
     <Dialog>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button variant="outline" className="font-mono">
           <BoltIcon className="text-muted-foreground mr-2 size-5" /> Process episodes
         </Button>
@@ -290,31 +289,15 @@ export function ProcessPodcastSwitch({
 }
 
 export function ManagePodcastGeneral({
-  podcastSlug,
+  podcast: initialPodcast,
   planLimit,
 }: {
-  podcastSlug: string;
+  podcast: PodcastWithEpisodes;
   planLimit: EpisodeLimit | null;
 }) {
-  const [podcast, setPodcast] = useState<PodcastWithEpisodes | null>(null);
-  const [isPublic, setIsPublic] = useState(false);
-  //const [isPublished, setIsPublished] = useState(podcast.published || false);
-  const [processEnabled, setProcessEnabled] = useState(false);
-
-  useEffect(() => {
-    if (podcast) {
-      return;
-    }
-    getPodcastWithEpisodes(podcastSlug)
-      .then((podcast) => {
-        setPodcast(podcast);
-        setIsPublic(!podcast.private);
-        setProcessEnabled(podcast.process);
-      })
-      .catch((e) => {
-        toast.error('Failed to fetch podcast: ' + e.message);
-      });
-  }, [podcastSlug, podcast]);
+  const [podcast] = useState<PodcastWithEpisodes>(initialPodcast);
+  const [isPublic, setIsPublic] = useState(!initialPodcast.private);
+  const [processEnabled, setProcessEnabled] = useState(initialPodcast.process);
 
   const doRefresh = () => {
     if (!podcast) {
@@ -377,7 +360,7 @@ export function ManagePodcastGeneral({
 
   return (
     <div className="flex flex-col items-start gap-8">
-      {!podcast || planLimit === null ? (
+      {planLimit === null ? (
         <div>Loading...</div>
       ) : (
         <>

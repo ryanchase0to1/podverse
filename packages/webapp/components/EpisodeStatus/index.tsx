@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { EpisodeWithPodcast, EpisodeStatus, EpisodeState, PodcastStat } from 'podverse-utils';
+import { EpisodeWithPodcast, EpisodeStatus, EpisodeState } from 'podverse-utils';
 import { Column, ColumnDef, flexRender, getCoreRowModel, useReactTable, SortingState } from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { durationString } from '@/lib/time';
@@ -11,7 +11,7 @@ import { EpisodeTooltip } from '../Indicators';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowsUpDownIcon } from '@heroicons/react/24/outline';
-import { getEpisodes, getPodcastStats } from '@/lib/actions';
+import { getEpisodes } from '@/lib/actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Pagination,
@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import Image from 'next/image';
 
 type EpisodeColumn = Column<EpisodeWithPodcast, unknown>;
+type PodcastOption = { id: number; title: string };
 
 /** A highlighted column header based on sorting. */
 function columnHeader(title: string) {
@@ -152,7 +153,7 @@ function PodcastSelector({
   value,
   onValueChange,
 }: {
-  podcasts: PodcastStat[];
+  podcasts: PodcastOption[];
   value?: string;
   onValueChange?: (value: string) => void;
 }) {
@@ -175,20 +176,29 @@ function PodcastSelector({
   );
 }
 
-export function EpisodeTable<TData, TValue>() {
+export function EpisodeTable({
+  initialPodcasts,
+  initialEpisodes,
+  initialRowCount,
+}: {
+  initialPodcasts: PodcastOption[];
+  initialEpisodes: EpisodeWithPodcast[];
+  initialRowCount: number;
+}) {
   const { userId } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<EpisodeWithPodcast[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<EpisodeWithPodcast[]>(initialEpisodes);
   const [page, setPage] = useState(1);
-  const [rowCount, setRowCount] = useState(0);
+  const [rowCount, setRowCount] = useState(initialRowCount);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [showReady, setShowReady] = useState(true);
   const [showPending, setShowPending] = useState(true);
   const [showProcessing, setShowProcessing] = useState(true);
   const [showError, setShowError] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [podcasts, setPodcasts] = useState<PodcastStat[]>([]);
+  const [podcasts] = useState<PodcastOption[]>(initialPodcasts);
   const [podcastId, setPodcastId] = useState<number | undefined>(undefined);
+  const skipInitialFetch = useRef(true);
 
   const ENTRIES_PER_PAGE = 10;
   const numPages = Math.ceil(rowCount / ENTRIES_PER_PAGE);
@@ -264,21 +274,18 @@ export function EpisodeTable<TData, TValue>() {
     },
   });
 
-  // Fetch list of podcasts.
-  useEffect(() => {
-    getPodcastStats().then((stats) => {
-      setPodcasts(stats.filter((stat) => stat.owner === userId));
-    });
-  }, [userId]);
-
   // Reset page count to 1 when sorting changes.
   useEffect(() => {
     setPage(1);
   }, [sorting]);
 
-  // Fetch data.
+  // Fetch data. Skip the first run when the server already provided the default page.
   useEffect(() => {
     if (!userId) {
+      return;
+    }
+    if (skipInitialFetch.current) {
+      skipInitialFetch.current = false;
       return;
     }
     let sortBy: string | undefined = undefined;

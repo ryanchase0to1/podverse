@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { EpisodeIndicator } from '../Indicators';
 import { BoltIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { processEpisode, updateEpisode, uploadCoverImage } from '@/lib/actions';
-import { useEpisodeLimit } from '@/lib/limits';
+import { useEpisodeLimit } from '@/lib/use-limits';
 import { cn } from '@/lib/utils';
 import { getEpisodeWithPodcast } from '@/lib/actions';
 import { EpisodeHeader } from '@/components/EpisodeHeader';
