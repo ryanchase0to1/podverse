@@ -41,6 +41,7 @@ import { Resend } from 'resend';
 import { EpisodeLimit } from '@/lib/limits';
 import { sendEmail } from '@/lib/email';
 import { getUser, userPrimaryEmailAddress } from '@/lib/users';
+import { searchPodcastIndex, type PodcastSearchResult } from '@/lib/podcast-index';
 import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -239,6 +240,15 @@ export async function deletePodcast(slug: string): Promise<void> {
   await DeletePodcast(supabase, slug);
   revalidatePath('/podcast/[podcastSlug]', 'layout'); // Pick up sub-pages.
   revalidatePath('/dashboard');
+}
+
+/** Search Podcast Index for shows the signed-in user can import. */
+export async function searchPodcasts(query: string): Promise<PodcastSearchResult[]> {
+  const { userId } = auth();
+  if (!userId) {
+    throw new Error('Unauthorized');
+  }
+  return searchPodcastIndex(query);
 }
 
 /** Return the given podcast feed metadata. */

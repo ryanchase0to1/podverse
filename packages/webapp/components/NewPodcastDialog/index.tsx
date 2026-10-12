@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { Icons } from '@/components/icons';
 import { Episode, PodcastWithEpisodes, PodcastWithEpisodesMetadata } from 'podverse-utils';
 import { EpisodeStrip } from '../PodcastEpisodeList';
-import { readPodcastFeed, importPodcast } from '@/lib/actions';
+import { readPodcastFeed, importPodcast, searchPodcasts } from '@/lib/actions';
 import { usePodcastLimit } from '@/lib/use-limits';
 import { PodcastLimit } from '@/lib/limits';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
@@ -24,24 +24,68 @@ enum importStage {
   IMPORTING,
 }
 
+type PodcastSearchResult = Awaited<ReturnType<typeof searchPodcasts>>[number];
+
 export function NewPodcastDialog({ planLimit: planLimitProp }: { planLimit?: PodcastLimit }) {
   const [open, setOpen] = useState(false);
   const [rssUrl, setRssUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<importStage>(importStage.ENTER_URL);
   const [podcast, setPodcast] = useState<PodcastWithEpisodesMetadata | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<PodcastSearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const searchRequest = useRef(0);
   const planLimitFromHook = usePodcastLimit(planLimitProp === undefined);
   const planLimit = planLimitProp ?? planLimitFromHook;
-  if (!planLimit) {
-    return null;
-  }
 
   const resetDialogState = () => {
     setStage(importStage.ENTER_URL);
     setPodcast(null);
     setError(null);
     setRssUrl(null);
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearching(false);
+    setSearchError(null);
   };
+
+  useEffect(() => {
+    if (stage !== importStage.ENTER_URL) {
+      return;
+    }
+    const query = searchQuery.trim();
+    if (query.length < 2) {
+      setSearchResults([]);
+      setSearching(false);
+      setSearchError(null);
+      return;
+    }
+
+    const requestId = ++searchRequest.current;
+    setSearching(true);
+    setSearchError(null);
+    const handle = setTimeout(() => {
+      searchPodcasts(query)
+        .then((results) => {
+          if (requestId !== searchRequest.current) {
+            return;
+          }
+          setSearchResults(results);
+          setSearching(false);
+        })
+        .catch((e: unknown) => {
+          if (requestId !== searchRequest.current) {
+            return;
+          }
+          setSearchResults([]);
+          setSearching(false);
+          setSearchError(e instanceof Error ? e.message : 'Podcast search failed');
+        });
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [searchQuery, stage]);
 
   const onOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
@@ -50,33 +94,43 @@ export function NewPodcastDialog({ planLimit: planLimitProp }: { planLimit?: Pod
     }
   };
 
-  const onImportClicked = async () => {
+  const loadFeed = (feedUrl: string) => {
     setError(null);
-    if (!rssUrl) {
-      setError('Please enter a valid URL');
-      return;
-    }
+    setRssUrl(feedUrl);
     try {
-      const url = new URL(rssUrl);
+      const url = new URL(feedUrl);
       if (url.protocol !== 'https:' && url.protocol !== 'http:') {
         setError('Please enter a valid URL');
         return;
       }
-      setStage(importStage.LOADING);
-
-      readPodcastFeed(rssUrl)
-        .then((data) => {
-          setPodcast(data);
-          setStage(importStage.VALIDATING);
-        })
-        .catch((e) => {
-          setStage(importStage.ENTER_URL);
-          setError('Error reading podcast feed: ' + e.message);
-        });
-    } catch (e) {
+    } catch {
       setError('Please enter a valid URL');
       return;
     }
+    setStage(importStage.LOADING);
+    readPodcastFeed(feedUrl)
+      .then((data) => {
+        setPodcast(data);
+        setStage(importStage.VALIDATING);
+      })
+      .catch((e) => {
+        setStage(importStage.ENTER_URL);
+        setError('Error reading podcast feed: ' + e.message);
+      });
+  };
+
+  const onImportClicked = () => {
+    if (!rssUrl) {
+      setError('Please enter a valid URL');
+      return;
+    }
+    loadFeed(rssUrl);
+  };
+
+  const onSelectResult = (result: PodcastSearchResult) => {
+    setSearchResults([]);
+    setSearchQuery(result.title);
+    loadFeed(result.url);
   };
 
   const onConfirmClicked = async () => {
@@ -101,6 +155,10 @@ export function NewPodcastDialog({ planLimit: planLimitProp }: { planLimit?: Pod
     toast.info('Podcast import cancelled');
     setOpen(false);
   };
+
+  if (!planLimit) {
+    return null;
+  }
 
   let upgradeMessage = (
     <div className="flex flex-row items-center gap-4">
@@ -131,11 +189,50 @@ export function NewPodcastDialog({ planLimit: planLimitProp }: { planLimit?: Pod
             upgradeMessage
           ) : (
             <>
+              <div className="flex flex-col gap-2">
+                <Input
+                  className="w-full"
+                  placeholder="Search for a podcast"
+                  value={searchQuery}
+                  disabled={stage !== importStage.ENTER_URL}
+                  onInput={(e) => {
+                    setSearchQuery((e.target as HTMLInputElement).value);
+                  }}
+                />
+                {searching && <div className="text-primary text-sm font-mono">Searching…</div>}
+                {searchError && <div className="text-primary text-sm">{searchError}</div>}
+                {stage === importStage.ENTER_URL && searchResults.length > 0 && (
+                  <div className="flex flex-col gap-1">
+                    {searchResults.map((result) => (
+                      <button
+                        key={result.id}
+                        type="button"
+                        className="hover:bg-muted flex flex-row items-center gap-3 rounded-md p-2 text-left"
+                        onClick={() => onSelectResult(result)}
+                      >
+                        {result.image?.startsWith('https://') ? (
+                          <Image src={result.image} alt="" width={40} height={40} className="size-10 rounded" />
+                        ) : (
+                          <div className="bg-muted size-10 rounded" />
+                        )}
+                        <div className="min-w-0">
+                          <div className="truncate text-sm">{result.title}</div>
+                          <div className="text-muted-foreground truncate text-xs">
+                            {result.author}
+                            {result.episodeCount != null ? ` · ${result.episodeCount} episodes` : ''}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="flex flex-row gap-2 items-center">
                 <Input
                   className="w-full"
                   placeholder="https://example.com/rss"
                   value={rssUrl || ''}
+                  disabled={stage !== importStage.ENTER_URL}
                   onInput={(e) => {
                     setRssUrl((e.target as HTMLInputElement).value);
                   }}
@@ -146,7 +243,7 @@ export function NewPodcastDialog({ planLimit: planLimitProp }: { planLimit?: Pod
               </div>
               {stage === importStage.ENTER_URL && (
                 <div className="text-primary text-sm font-mono">
-                  First, enter the URL of your podcast&apos;s RSS feed.
+                  Search for a podcast, or paste the URL of its RSS feed.
                 </div>
               )}
               {stage === importStage.LOADING && (
