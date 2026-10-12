@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { loadStripe } from '@stripe/stripe-js';
+import { toast } from 'sonner';
 import { Plan, Subscription } from 'podverse-utils';
 
 export function PurchaseButton({
@@ -44,13 +45,17 @@ export function PurchaseButton({
         },
         body: JSON.stringify({ priceId: plan.priceId, redirectUrl }),
       });
-      const { sessionId } = await checkoutResponse.json();
-      const stripeError = await stripe.redirectToCheckout({ sessionId });
-      if (stripeError) {
-        console.error(stripeError);
+      const body = await checkoutResponse.json();
+      if (!checkoutResponse.ok || !body.sessionId) {
+        throw new Error(body.error || 'Could not start checkout');
+      }
+      const result = await stripe.redirectToCheckout({ sessionId: body.sessionId });
+      if (result.error) {
+        throw new Error(result.error.message || 'Could not start checkout');
       }
     } catch (error) {
       console.error(error);
+      toast.error(error instanceof Error ? error.message : 'Could not start checkout');
     }
   };
 
@@ -75,12 +80,13 @@ export function PurchaseButton({
       window.location.replace(portalSession.url);
     } catch (error) {
       console.error(error);
+      toast.error(error instanceof Error ? error.message : 'Could not open billing');
     }
   };
 
   return (
-    <Button variant={isUpgrade ? 'default' : 'secondary'} className="className" onClick={onClick} disabled={isFree}>
-      {isFree ? 'Current' : isExisting ? 'Manage' : isUpgrade ? 'Upgrade' : 'Downgrade'}
+    <Button variant={isUpgrade ? 'default' : 'secondary'} className={className} onClick={onClick} disabled={isFree}>
+      {isFree ? 'Current' : isExisting ? 'Manage subscription' : isUpgrade ? 'Upgrade' : 'Downgrade'}
     </Button>
   );
 }

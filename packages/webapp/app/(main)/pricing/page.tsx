@@ -4,6 +4,7 @@ import { Subscription, Plan, PLANS, SubscriptionState } from 'podverse-utils';
 import { SignupOrLogin } from '@/components/SignupOrLogin';
 import { auth } from '@clerk/nextjs/server';
 import { getCurrentSubscription } from '@/lib/actions';
+import { fulfillCheckoutSession } from '@/lib/billing';
 import { Metadata, ResolvingMetadata } from 'next';
 
 export async function generateMetadata(props: any, parent: ResolvingMetadata): Promise<Metadata> {
@@ -12,8 +13,19 @@ export async function generateMetadata(props: any, parent: ResolvingMetadata): P
   };
 }
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: { success?: string; session_id?: string };
+}) {
   const { userId } = auth();
+  if (userId && searchParams?.session_id) {
+    try {
+      await fulfillCheckoutSession(searchParams.session_id);
+    } catch (e) {
+      console.error('Error fulfilling checkout session:', e);
+    }
+  }
   let existingSubscription = null;
   if (userId) {
     try {

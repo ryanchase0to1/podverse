@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         // We pass this along so the Stripe webhook can access Supabase as this user.
         supabaseAccessToken,
       },
-      success_url: redirectUrl + '?success=true',
+      success_url: redirectUrl + '?success=true&session_id={CHECKOUT_SESSION_ID}',
       cancel_url: redirectUrl + '?canceled=true',
       allow_promotion_codes: true,
     });
@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ sessionId: session.id });
   } catch (err) {
     console.log(err);
-    return NextResponse.json({ error: `Error creating checkout session: ${JSON.stringify(err)}` }, { status: 500 });
+    const message = err instanceof Error ? err.message : 'Error creating checkout session';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
