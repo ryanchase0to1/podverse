@@ -85,7 +85,7 @@ export async function updateEpisode(episode: Episode | EpisodeWithPodcast): Prom
 }
 
 /** Kick off processing for the given episode. */
-export async function processEpisode(episodeId: string, force: boolean): Promise<string> {
+export async function processEpisode(episodeId: string): Promise<string> {
   console.log(`Kicking off processing for episode: ${episodeId}`);
   const { userId, getToken } = auth();
 
@@ -105,7 +105,7 @@ export async function processEpisode(episodeId: string, force: boolean): Promise
     name: 'process/episode',
     data: {
       episodeId,
-      force,
+      force: false,
     },
   });
 
@@ -116,7 +116,7 @@ export async function processEpisode(episodeId: string, force: boolean): Promise
 }
 
 /** Kick off processing for the given podcast. */
-export async function processPodcast(podcastId: string, force: boolean, episodeLimit?: number): Promise<string> {
+export async function processPodcast(podcastId: string, episodeLimit?: number): Promise<string> {
   console.log(`Kicking off processing for podcast: ${podcastId}`);
   const { userId, getToken } = auth();
 
@@ -134,7 +134,7 @@ export async function processPodcast(podcastId: string, force: boolean, episodeL
     name: 'process/podcast',
     data: {
       podcastId: podcast.id.toString(),
-      force,
+      force: false,
       episodeLimit,
     },
   });

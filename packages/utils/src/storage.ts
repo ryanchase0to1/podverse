@@ -165,6 +165,73 @@ export async function DeletePodcast(supabase: SupabaseClient, slug: string) {
   console.log(`Finished deleting podcast: ${slug}`);
 }
 
+/** Object path inside a storage bucket, taken from the last three URL segments. */
+function storageObjectPath(url: string | null): string | null {
+  if (!url) {
+    return null;
+  }
+  const parts = url.split('/').filter((part) => part !== '');
+  if (parts.length < 3) {
+    return null;
+  }
+  return parts.slice(-3).join('/');
+}
+
+/**
+ * Delete generated content for one episode: stored audio, transcript, summary,
+ * speaker names, suggestions, and chat embeddings. The episode row and its
+ * original RSS audio URL stay, so it can be imported again.
+ */
+export async function ClearEpisodeContents(supabase: SupabaseClient, episodeId: number) {
+  const episode = await GetEpisode(supabase, episodeId);
+  console.log(`Clearing generated content for episode ${episode.id}: ${episode.title}`);
+
+  const audioPath = storageObjectPath(episode.audioUrl);
+  if (audioPath) {
+    const { error } = await supabase.storage.from('audio').remove([audioPath]);
+    if (error) {
+      throw error;
+    }
+  }
+
+  const transcriptPaths = [storageObjectPath(episode.transcriptUrl), storageObjectPath(episode.rawTranscriptUrl)].filter(
+    (path): path is string => path !== null,
+  );
+  if (transcriptPaths.length > 0) {
+    const { error } = await supabase.storage.from('transcripts').remove(transcriptPaths);
+    if (error) {
+      throw error;
+    }
+  }
+
+  const summaryPath = storageObjectPath(episode.summaryUrl);
+  if (summaryPath) {
+    const { error } = await supabase.storage.from('summaries').remove([summaryPath]);
+    if (error) {
+      throw error;
+    }
+  }
+
+  const { error: documentError } = await supabase.from('Documents').delete().eq('episode', episodeId);
+  if (documentError) {
+    throw documentError;
+  }
+  const { error: speakerError } = await supabase.from('SpeakerMap').delete().eq('episode', episodeId);
+  if (speakerError) {
+    throw speakerError;
+  }
+  await DeleteSuggestions(supabase, episodeId);
+
+  episode.audioUrl = null;
+  episode.transcriptUrl = null;
+  episode.rawTranscriptUrl = null;
+  episode.summaryUrl = null;
+  episode.error = null;
+  episode.status = null;
+  await UpdateEpisode(supabase, episode);
+  console.log(`Cleared generated content for episode ${episode.id}`);
+}
+
 /** Return the given podcast with episodes. */
 export async function GetPodcastWithEpisodes(supabase: SupabaseClient, slug: string): Promise<PodcastWithEpisodes> {
   const { data, error } = await supabase

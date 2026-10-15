@@ -121,10 +121,9 @@ function ProcessPodcastDialog({ podcast, planLimit }: { podcast: PodcastWithEpis
   }
 
   const processEnabled = planLimit.numToProcess > 0;
-  const forceEnabled = processEnabled && planLimit.processedEpisodes > 0;
 
   const onProcess = () => {
-    processPodcast(podcast.id.toString(), false, numEpisodes)
+    processPodcast(podcast.id.toString(), numEpisodes)
       .then(() => {
         toast.success(`Started processing for ${podcast.title}`);
       })
@@ -159,26 +158,6 @@ function ProcessPodcastDialog({ podcast, planLimit }: { podcast: PodcastWithEpis
               <div className="text-muted-foreground font-mono text-xs">{planLimit.numToProcess}</div>
             </div>
           )}
-          {/* <div className="items-top mt-4 flex space-x-2"> */}
-          {/* <Checkbox
-              id="force"
-              className="mt-1"
-              disabled={!forceEnabled}
-              checked={force}
-              onCheckedChange={(val: boolean) => setForce(val)}
-            /> */}
-          {/* <div className="flex flex-col gap-1">
-              <label htmlFor="force" className="text-muted-foreground font-mono">
-                Re-process existing episodes
-              </label>
-              {processed > 0 && (
-                <div className="text-muted-foreground text-sm">
-                  Checking this box will also re-process <span className="text-primary">{processed}</span> episodes that
-                  have already been processed.
-                </div>
-              )}
-            </div> */}
-          {/* </div> */}
         </div>
         <DialogFooter>
           <DialogClose asChild>

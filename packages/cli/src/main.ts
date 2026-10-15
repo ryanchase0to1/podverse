@@ -3,7 +3,14 @@
  */
 
 import { config } from 'dotenv';
-config({ debug: true });
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+config();
+if (!process.env.SUPABASE_URL) {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  config({ path: path.resolve(here, '../../webapp/.env.local') });
+}
 
 import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(process.env.SUPABASE_URL as string, process.env.SUPABASE_API_KEY as string);
@@ -16,6 +23,8 @@ import {
   GetPodcasts,
   GetPodcastWithEpisodes,
   DeletePodcast,
+  ClearEpisodeContents,
+  GetEpisode,
   Transcribe,
   Summarize,
   SpeakerID,
@@ -235,6 +244,16 @@ program
     } catch (err) {
       term('Error sending process event: ').red(err);
     }
+  });
+
+program
+  .command('clear-episode')
+  .description('Delete generated content for an episode. The episode itself stays in the podcast.')
+  .argument('<episodeId>', 'ID of the episode.')
+  .action(async (episodeId: string) => {
+    const episode = await GetEpisode(supabase, parseInt(episodeId, 10));
+    await ClearEpisodeContents(supabase, episode.id);
+    term('Cleared generated content for ').green(episode.title)(` (${episode.id})\n`);
   });
 
 program
