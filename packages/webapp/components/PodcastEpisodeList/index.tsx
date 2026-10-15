@@ -52,6 +52,7 @@ export function PodcastEpisodeList({
 }) {
   const [page, setPage] = useState(1);
   const [showAll, setShowAll] = useState(embed || episodes.filter(isReady).length === 0);
+  const { userId } = useAuth();
   const searchParams = useSearchParams();
   const maybeSearchParams = searchParams.toString() ? `?${searchParams.toString()}` : '';
 
@@ -132,7 +133,11 @@ export function PodcastEpisodeList({
           <Link
             target="_parent"
             key={index}
-            href={`/podcast/${podcast.slug}/episode/${episode.slug}${maybeSearchParams}`}
+            href={
+              userId && userId === podcast.owner
+                ? `/podcast/${podcast.slug}/episode/${episode.slug}/manage`
+                : `/podcast/${podcast.slug}/episode/${episode.slug}${maybeSearchParams}`
+            }
             className="hover:ring-primary hover:ring-4"
           >
             <EpisodeStrip key={index} podcast={podcast} episode={episode} showIndicator={showAll && embed === false} />

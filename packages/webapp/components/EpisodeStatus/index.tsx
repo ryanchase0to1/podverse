@@ -53,7 +53,7 @@ const columns: ColumnDef<EpisodeWithPodcast>[] = [
       const ep = row.original as EpisodeWithPodcast;
       const imageUrl = getValue() ?? ('' as string);
       return (
-        <Link href={`/podcast/${ep.podcast.slug}/episode/${ep.slug}?uuid=${ep.podcast.uuid?.replace(/-/g, '')}`}>
+        <Link href={`/podcast/${ep.podcast.slug}/episode/${ep.slug}/manage`}>
           <div className="ring-primary flex h-[100px] flex-col overflow-y-clip border hover:ring-2">
             <div className="m-auto flex w-[100px]">
               {imageUrl && <Image src={getValue() as string} width={100} height={100} alt="Episode thumbnail" />}
@@ -69,7 +69,7 @@ const columns: ColumnDef<EpisodeWithPodcast>[] = [
     cell: ({ row, getValue }) => {
       const ep = row.original as EpisodeWithPodcast;
       return (
-        <Link href={`/podcast/${ep.podcast.slug}/episode/${ep.slug}?uuid=${ep.podcast.uuid?.replace(/-/g, '')}`}>
+        <Link href={`/podcast/${ep.podcast.slug}/episode/${ep.slug}/manage`}>
           <span className="line-clamp-2 font-mono text-sm hover:underline">{getValue() as string}</span>
         </Link>
       );

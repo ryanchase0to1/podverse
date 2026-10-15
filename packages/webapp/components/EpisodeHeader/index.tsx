@@ -1,12 +1,8 @@
 import Link from 'next/link';
 import { EpisodeWithPodcast } from 'podverse-utils';
 import moment from 'moment';
-import { EpisodeIndicator } from '../Indicators';
 import { ArrowTopRightOnSquareIcon, RssIcon, GlobeAmericasIcon } from '@heroicons/react/24/outline';
 import { CollapseWithToggle } from '@/components/Collapse';
-import { Owner } from '@/components/Owner';
-import { buttonVariants } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { ShareButtons } from '@/components/ShareButtons';
 
@@ -19,7 +15,6 @@ export function EpisodeHeader({
   uuid?: string;
   showManage?: boolean;
 }) {
-  const episodeWithoutPodcast = { ...episode, podcast: episode.podcast.id };
   const maybeUuid = uuid ? `?uuid=${uuid}` : '';
 
   return (
@@ -55,20 +50,6 @@ export function EpisodeHeader({
         </div>
       </div>
       <div className="flex flex-col gap-2">
-        {showManage && (
-          <Owner owner={episode.podcast.owner}>
-            <div className="flex flex-row gap-2 items-center">
-              <Link href={`/podcast/${episode.podcast.slug}/episode/${episode.slug}/manage`}>
-                <div className={cn(buttonVariants({ variant: 'outline' }))}>
-                  <div className="flex flex-row items-center gap-2">
-                    <EpisodeIndicator episode={episodeWithoutPodcast} />
-                    Manage episode
-                  </div>
-                </div>
-              </Link>
-            </div>
-          </Owner>
-        )}
         <div className="flex flex-row gap-1 sm:flex-row sm:items-center">
           <div className="text-muted-foreground font-mono text-sm">
             Published <span className="text-primary">{moment(episode.pubDate).format('MMMM Do YYYY')}</span>
