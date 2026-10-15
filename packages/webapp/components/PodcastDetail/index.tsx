@@ -57,7 +57,9 @@ export async function PodcastDetail({
 
     let podcast = null;
     podcast = await GetPodcastWithEpisodes(supabase, podcastSlug);
-    if (podcast.private && podcast.uuid) {
+    const { userId } = auth();
+    const isOwner = userId !== null && userId === podcast.owner;
+    if (!isOwner && podcast.private && podcast.uuid) {
       if (uuid) {
         if (uuid !== podcast.uuid.replace(/-/g, '')) {
           throw new Error('Podcast is private and UUID does not match');
@@ -71,7 +73,6 @@ export async function PodcastDetail({
       }
     }
     // Only compute plan limits for the owner; visitors don't need the subscription lookup.
-    const { userId } = auth();
     let planLimit = null;
     if (userId && podcast.owner === userId) {
       const subscription = await getCurrentSubscription();

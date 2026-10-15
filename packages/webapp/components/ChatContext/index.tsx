@@ -4,6 +4,7 @@ import React, { createContext, useEffect, useState } from 'react';
 import { PodcastWithEpisodes, EpisodeWithPodcast } from 'podverse-utils';
 import { getPodcastWithEpisodes, getEpisodeWithPodcast, search } from '@/lib/actions';
 import { useParams, useSearchParams } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 
 interface ChatContextType {
   podcast?: PodcastWithEpisodes | null;
@@ -43,14 +44,16 @@ export function ChatContextProvider({
 
   const searchParams = useSearchParams();
   const uuid = searchParams.get('uuid') || searchParams.get('activationCode') || undefined;
+  const { userId } = useAuth();
 
   useEffect(() => {
     // Fetch podcast and/or episode if needed.
     const slugs = podcastSlug && episodeSlug ? { podcastSlug, episodeSlug } : params;
     if (slugs.podcastSlug) {
       getPodcastWithEpisodes(slugs.podcastSlug).then((podcast) => {
-        // Bypass private check if correct UUID is provided.
-        if (podcast.private && !uuid && podcast.uuid !== uuid) {
+        // The owner can open their own podcast. Everyone else needs the private link.
+        const isOwner = Boolean(userId && podcast.owner === userId);
+        if (!isOwner && podcast.private && !uuid && podcast.uuid !== uuid) {
           console.error(`Podcast ${slugs.podcastSlug} is private`);
           setCurrentPodcast(undefined);
         } else {
@@ -63,7 +66,7 @@ export function ChatContextProvider({
         }
       });
     }
-  }, [podcast, episode, podcastSlug, episodeSlug, params, uuid]);
+  }, [podcast, episode, podcastSlug, episodeSlug, params, uuid, userId]);
 
   const value: ChatContextType = {
     podcast: currentPodcast,

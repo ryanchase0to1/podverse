@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '@/lib/supabase';
 import { EpisodeWithPodcast, GetEpisodeWithPodcastBySlug, isReady } from 'podverse-utils';
+import { auth } from '@clerk/nextjs/server';
 import { EpisodeClient } from '@/components/EpisodeClient';
 import { PodcastLinkHeader } from '@/components/PodcastLinkHeader';
 import { EpisodeHeader } from '@/components/EpisodeHeader';
@@ -53,23 +54,14 @@ export async function EpisodeDetail({
 }) {
   const supabase = await getSupabaseClient();
   const episode = await GetEpisodeWithPodcastBySlug(supabase, podcastSlug, episodeSlug);
-  try {
-    if (episode.podcast.private && episode.podcast.uuid) {
-      if (uuid) {
-        if (uuid !== episode.podcast.uuid.replace(/-/g, '')) {
-          throw new Error('Podcast is private and UUID does not match');
-        }
-      } else if (activationCode) {
-        if (activationCode !== episode.podcast.uuid.replace(/-/g, '')) {
-          throw new Error('Podcast is private and activation code does not match');
-        }
-      } else {
-        throw new Error('Podcast is private and no UUID or activation code provided');
-      }
+  const { userId } = auth();
+  const isOwner = userId !== null && userId === episode.podcast.owner;
+  if (!isOwner && episode.podcast.private && episode.podcast.uuid) {
+    const expected = episode.podcast.uuid.replace(/-/g, '');
+    const allowed = (uuid && uuid === expected) || (!uuid && activationCode === expected);
+    if (!allowed) {
+      return <div className="mx-auto mt-8 w-11/12 font-mono md:w-4/5">This podcast is private.</div>;
     }
-  } catch (error) {
-    console.error('Error checking private podcast:', error);
-    return <div className="mx-auto mt-8 w-11/12 font-mono md:w-4/5">This podcast is private.</div>;
   }
 
   // Check if there are any Documents for this episode.
