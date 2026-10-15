@@ -28,7 +28,15 @@ import { userPrimaryEmailAddress } from '@/lib/users';
 // must be publicly reachable and forward to your dev server - e.g. `tailscale serve`, ngrok,
 // or a Cloudflare tunnel. Set DEVELOPMENT_SERVER_HOSTNAME in .env.local to your own tunnel;
 // without it the callback goes nowhere and the run stalls until waitForEvent times out.
-const DEVELOPMENT_SERVER_HOSTNAME = process.env.DEVELOPMENT_SERVER_HOSTNAME ?? 'deepdocks.tailf7e81.ts.net';
+/** Hostname only. Callers prefix https://, so a stored "https://..." value would double the scheme. */
+function publicHostname(): string {
+  const raw = (
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ??
+    process.env.DEVELOPMENT_SERVER_HOSTNAME ??
+    'deepdocks.tailf7e81.ts.net'
+  ).trim();
+  return raw.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+}
 
 /** Return false if the user's plan does not permit processing of this Episode. */
 async function checkUserPlanLimit(supabase: SupabaseClient, episode: EpisodeWithPodcast): Promise<boolean> {
@@ -103,7 +111,7 @@ export const processEpisode = inngest.createFunction(
     episode.error = null;
     await UpdateEpisode(supabase, episode);
 
-    const currentHostname = process.env.VERCEL_PROJECT_PRODUCTION_URL ?? DEVELOPMENT_SERVER_HOSTNAME;
+    const currentHostname = publicHostname();
     const episodeLink = `https://${currentHostname}/podcast/${episodeWithPodcast.podcast.slug}/episode/${episode.slug}`;
 
     try {
@@ -212,7 +220,8 @@ export const processEpisode = inngest.createFunction(
         text: JSON.stringify(error, null, 2) + '\n\n' + episodeLink + '\n',
       });
       console.error(`Error processing episode ${episodeId}`, error);
-      episode.error = error as Json;
+      const message = error instanceof Error ? error.message : String(error);
+      episode.error = { name: error instanceof Error ? error.name : 'Error', message } as Json;
       episode.status = {
         ...(episode.status as EpisodeStatus),
         message: `Error: ${JSON.stringify(error)}\n\n${episodeLink}\n`,
