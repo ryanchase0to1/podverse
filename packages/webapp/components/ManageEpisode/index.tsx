@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { EpisodeStatus, isPending, isProcessing, isError, isReady, EpisodeWithPodcast } from 'podverse-utils';
-import { Checkbox } from '@/components/ui/checkbox';
 import { buttonVariants } from '@/components/ui/button';
 import moment from 'moment';
 import { toast } from 'sonner';
@@ -127,6 +126,7 @@ const POLL_GRACE_MS = 2 * 60 * 1000;
 export function ManageEpisode({ podcastSlug, episodeSlug }: { podcastSlug: string; episodeSlug: string }) {
   const [episode, setEpisode] = useState<EpisodeWithPodcast | null>(null);
   const [pollDeadline, setPollDeadline] = useState(0);
+  const planLimit = useEpisodeLimit(episode?.podcast.id ?? 0);
 
   const refresh = useCallback(() => {
     return getEpisodeWithPodcast(podcastSlug, episodeSlug)
@@ -163,18 +163,69 @@ export function ManageEpisode({ podcastSlug, episodeSlug }: { podcastSlug: strin
     );
   }
 
+  const canProcess = (planLimit?.leftOnPlan ?? 0) > 0;
+  const status = episode.status as EpisodeStatus;
+  const errorMessage = episode.error ? JSON.stringify(episode.error, null, 2) : null;
+  const handleProcess = async () => {
+    try {
+      await processEpisode(episode.id.toString());
+      toast.success(`Started processing episode ${episode.title}`);
+      setPollDeadline(Date.now() + POLL_GRACE_MS);
+    } catch (e) {
+      toast.error(`Failed to start processing: ${(e as { message: string }).message}`);
+    }
+  };
+
   return (
     <>
       <div className="mx-auto mt-8 flex w-full flex-col gap-4 px-2 md:w-4/5">
         <div className="flex flex-row items-center gap-2 font-mono text-2xl font-bold">Manage episode</div>
         <EpisodeHeader episode={episode} showManage={false} />
-        <div className="w-fit">
-          <Link
-            className={buttonVariants({ variant: 'default' })}
-            href={`/podcast/${episode.podcast.slug}/episode/${episode.slug}`}
-          >
-            View episode
-          </Link>
+        <div className="flex flex-row flex-wrap items-start gap-6">
+          <div className="flex w-fit flex-row gap-2">
+            <Link
+              className={buttonVariants({ variant: 'default' })}
+              href={`/podcast/${episode.podcast.slug}/episode/${episode.slug}`}
+            >
+              View episode
+            </Link>
+            {canProcess && (
+              <button
+                type="button"
+                className={cn(buttonVariants({ variant: 'outline' }), 'font-mono')}
+                onClick={handleProcess}
+              >
+                <BoltIcon className="text-muted-foreground size-5" /> Import episode
+              </button>
+            )}
+          </div>
+          <div className="flex flex-col gap-3">
+            {isError(episode) && (
+              <div className="flex flex-row items-center gap-2">
+                <EpisodeIndicator episode={episode} />
+                <div>Error processing episode</div>
+              </div>
+            )}
+            {isError(episode) && errorMessage && (
+              <div className="max-h-[200px] max-w-md overflow-scroll text-wrap rounded-2xl border border-red-500 p-2">
+                <pre className="text-muted-foreground font-mono text-xs">{errorMessage}</pre>
+              </div>
+            )}
+            {!isError(episode) && (
+              <div className="flex flex-row items-center gap-2">
+                <EpisodeIndicator episode={episode} />
+                {isPending(episode) && <div>Processing not started</div>}
+                {isProcessing(episode) && <div>{status?.message || 'Processing'}</div>}
+                {isReady(episode) && <div>Processed</div>}
+              </div>
+            )}
+            {(status?.startedAt || status?.completedAt) && (
+              <div className="text-muted-foreground flex flex-col gap-1 font-mono text-sm">
+                {status.startedAt && <div>Started processing {moment(status.startedAt).fromNow()}</div>}
+                {status.completedAt && <div>Finished processing {moment(status.completedAt).fromNow()}</div>}
+              </div>
+            )}
+          </div>
         </div>
 
         <Tabs defaultValue="general" className="w-90% mt-8" orientation="vertical">
@@ -188,10 +239,7 @@ export function ManageEpisode({ podcastSlug, episodeSlug }: { podcastSlug: strin
               </TabsTrigger>
             </TabsList>
             <TabsContent className="w-60% border-muted my-0 border p-4" value="general">
-              <ManageEpisodeGeneral
-                episode={episode}
-                onProcessingStarted={() => setPollDeadline(Date.now() + POLL_GRACE_MS)}
-              />
+              <ManageEpisodeGeneral episode={episode} planLimit={planLimit} />
             </TabsContent>
             <TabsContent className="w-60% border-muted my-0 border p-4" value="embed">
               <EmbedEpisode episode={episode} />
@@ -205,13 +253,11 @@ export function ManageEpisode({ podcastSlug, episodeSlug }: { podcastSlug: strin
 
 function ManageEpisodeGeneral({
   episode,
-  onProcessingStarted,
+  planLimit,
 }: {
   episode: EpisodeWithPodcast;
-  onProcessingStarted: () => void;
+  planLimit: ReturnType<typeof useEpisodeLimit>;
 }) {
-  const [force, setForce] = useState(false);
-  const planLimit = useEpisodeLimit(episode.podcast.id);
   if (!planLimit) {
     return (
       <div className="mx-auto mt-8 flex w-full flex-col gap-4 px-2 md:w-4/5">
@@ -219,19 +265,7 @@ function ManageEpisodeGeneral({
       </div>
     );
   }
-  const status = episode.status as EpisodeStatus;
   const canProcess = planLimit.leftOnPlan > 0;
-
-  const handleProcess = async () => {
-    setForce(false);
-    try {
-      await processEpisode(episode.id.toString(), force);
-      toast.success(`Started processing episode ${episode.title}`);
-      onProcessingStarted();
-    } catch (e) {
-      toast.error(`Failed to start processing: ${(e as { message: string }).message}`);
-    }
-  };
 
   let upgradeMessage = (
     <div className="flex flex-row items-center gap-4 text-sm">
@@ -256,10 +290,6 @@ function ManageEpisodeGeneral({
       toast.error(`Failed to update: ${(e as { message: string }).message}`);
     }
   };
-
-  let statusMessage = status && status.message;
-  let errorMessage = episode.error ? JSON.stringify(episode.error, null, 2) : null;
-  const processingAllowed = force || canProcess;
 
   return (
     <div className="flex flex-col items-start gap-8">
@@ -290,49 +320,7 @@ function ManageEpisodeGeneral({
             doUpdateEpisode();
           }}
         />
-        <div className="flex flex-row justify-between">
-          <div className="mt-4 flex flex-row gap-2">
-            <EpisodeIndicator episode={episode} />
-            {isPending(episode) && <div>Processing not started</div>}
-            {isProcessing(episode) && <div>{statusMessage || 'Processing'}</div>}
-            {isError(episode) && <div>Error processing episode</div>}
-            {isReady(episode) && <div>Processed</div>}
-          </div>
-        </div>
-        {errorMessage && (
-          <div className="w-sm md:w-2xl mx-auto max-h-[300px] max-w-sm overflow-scroll text-wrap rounded-2xl border border-red-500 p-2 md:max-w-2xl">
-            <div className="text-muted-foreground truncate font-mono text-xs">
-              <p>
-                <pre>{errorMessage}</pre>
-              </p>
-            </div>
-          </div>
-        )}
-        <div className="text-muted-foreground flex flex-col gap-1 font-mono text-sm">
-          <div>{status && status.startedAt && `Started processing ${moment(status.startedAt).fromNow()}`}</div>
-          <div>{status && status.completedAt && `Finished processing ${moment(status.completedAt).fromNow()}`}</div>
-        </div>
-        {!processingAllowed && upgradeMessage}
-        {!isPending(episode) && processingAllowed && (
-          <div className="items-top mt-4 flex space-x-2">
-            <Checkbox id="force" className="mt-1" checked={force} onCheckedChange={(val: boolean) => setForce(val)} />
-            <div className="flex flex-col gap-1">
-              <label htmlFor="force" className="text-muted-foreground font-mono">
-                Force reprocessing
-              </label>
-              <div className="text-muted-foreground text-sm">
-                Checking this box will overwrite any existing transcript and episode summary.
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-      <div>
-        {canProcess && (
-          <div className={cn(buttonVariants({ variant: 'outline' }), 'font-mono')} onClick={handleProcess}>
-            <BoltIcon className="text-muted-foreground size-5" /> Process
-          </div>
-        )}
+        {!canProcess && upgradeMessage}
       </div>
     </div>
   );
