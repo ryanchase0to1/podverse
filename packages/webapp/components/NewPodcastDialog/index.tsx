@@ -24,7 +24,7 @@ enum importStage {
   IMPORTING,
 }
 
-type PodcastSearchResult = Awaited<ReturnType<typeof searchPodcasts>>[number];
+type PodcastSearchResult = Awaited<ReturnType<typeof searchPodcasts>>['results'][number];
 
 export function NewPodcastDialog({ planLimit: planLimitProp }: { planLimit?: PodcastLimit }) {
   const [open, setOpen] = useState(false);
@@ -68,20 +68,21 @@ export function NewPodcastDialog({ planLimit: planLimitProp }: { planLimit?: Pod
     setSearchError(null);
     const handle = setTimeout(() => {
       searchPodcasts(query)
-        .then((results) => {
+        .then((response) => {
           if (requestId !== searchRequest.current) {
             return;
           }
-          setSearchResults(results);
+          setSearchResults(response.results);
+          setSearchError(response.error);
           setSearching(false);
         })
-        .catch((e: unknown) => {
+        .catch(() => {
           if (requestId !== searchRequest.current) {
             return;
           }
           setSearchResults([]);
           setSearching(false);
-          setSearchError(e instanceof Error ? e.message : 'Podcast search failed');
+          setSearchError('Podcast search failed');
         });
     }, 300);
     return () => clearTimeout(handle);

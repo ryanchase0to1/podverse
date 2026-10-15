@@ -23,6 +23,7 @@ import {
 import { TranscribeEpisode, SummarizeEpisode, SpeakerIDEpisode, EmbedEpisode, SuggestEpisode } from '@/lib/process';
 import { sendEmail } from '@/lib/email';
 import { userPrimaryEmailAddress } from '@/lib/users';
+import { publicErrorMessage } from '@/lib/public-error';
 
 // Used when running locally. Deepgram posts the finished transcript back to this host, so it
 // must be publicly reachable and forward to your dev server - e.g. `tailscale serve`, ngrok,
@@ -214,17 +215,17 @@ export const processEpisode = inngest.createFunction(
         },
       };
     } catch (error) {
+      const message = publicErrorMessage(error);
       await sendEmail({
         to: userPrimaryEmailAddress(episodeWithPodcast.podcast.owner) || undefined,
         subject: `Error processing episode: ${episode.title}`,
-        text: JSON.stringify(error, null, 2) + '\n\n' + episodeLink + '\n',
+        text: message + '\n\n' + episodeLink + '\n',
       });
       console.error(`Error processing episode ${episodeId}`, error);
-      const message = error instanceof Error ? error.message : String(error);
-      episode.error = { name: error instanceof Error ? error.name : 'Error', message } as Json;
+      episode.error = { message } as Json;
       episode.status = {
         ...(episode.status as EpisodeStatus),
-        message: `Error: ${JSON.stringify(error)}\n\n${episodeLink}\n`,
+        message: `Error: ${message}`,
         completedAt: new Date().toISOString(),
       };
       await UpdateEpisode(supabase, episode);

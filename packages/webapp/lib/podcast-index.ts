@@ -14,7 +14,8 @@ export async function searchPodcastIndex(query: string): Promise<PodcastSearchRe
   const apiKey = process.env.PODCAST_INDEX_API_KEY;
   const apiSecret = process.env.PODCAST_INDEX_API_SECRET;
   if (!apiKey || !apiSecret) {
-    throw new Error('Podcast search is not configured. Add PODCAST_INDEX_API_KEY and PODCAST_INDEX_API_SECRET.');
+    console.error('Podcast search is not configured. Add PODCAST_INDEX_API_KEY and PODCAST_INDEX_API_SECRET.');
+    throw new Error('Podcast search is not configured.');
   }
 
   const trimmed = query.trim();

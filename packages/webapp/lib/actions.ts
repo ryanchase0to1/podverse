@@ -42,6 +42,7 @@ import { EpisodeLimit } from '@/lib/limits';
 import { sendEmail } from '@/lib/email';
 import { getUser, userPrimaryEmailAddress } from '@/lib/users';
 import { searchPodcastIndex, type PodcastSearchResult } from '@/lib/podcast-index';
+import { publicErrorMessage } from '@/lib/public-error';
 import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -243,12 +244,19 @@ export async function deletePodcast(slug: string): Promise<void> {
 }
 
 /** Search Podcast Index for shows the signed-in user can import. */
-export async function searchPodcasts(query: string): Promise<PodcastSearchResult[]> {
+export async function searchPodcasts(
+  query: string,
+): Promise<{ results: PodcastSearchResult[]; error: string | null }> {
   const { userId } = auth();
   if (!userId) {
-    throw new Error('Unauthorized');
+    return { results: [], error: 'Sign in to search for podcasts.' };
   }
-  return searchPodcastIndex(query);
+  try {
+    return { results: await searchPodcastIndex(query), error: null };
+  } catch (e) {
+    console.error('Podcast search failed', e);
+    return { results: [], error: publicErrorMessage(e) };
+  }
 }
 
 /** Return the given podcast feed metadata. */
